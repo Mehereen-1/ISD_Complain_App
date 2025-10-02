@@ -1,12 +1,12 @@
 // services/authService.ts
 import {
-    createUserWithEmailAndPassword,
-    onAuthStateChanged,
-    signInWithEmailAndPassword,
-    signOut,
-    User
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  User
 } from "firebase/auth";
-import { auth } from "../../lib/firebaseConfig";
+import { auth } from "../../../../lib/firebaseConfig";
 import { createUserProfile, UserProfile } from "./dbService";
 // Sign up
 export const signUp = async (email: string, password: string, name?: string): Promise<UserProfile> => {

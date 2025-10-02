@@ -1,6 +1,6 @@
 // services/dbService.ts
 import { onValue, push, ref, remove, set, update } from "firebase/database";
-import { db } from "../../lib/firebaseConfig";
+import { db } from "../../../../lib/firebaseConfig";
 
 export interface Complaint {
   id?: string;
