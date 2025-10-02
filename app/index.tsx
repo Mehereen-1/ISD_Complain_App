@@ -14,7 +14,7 @@ const Tab = createBottomTabNavigator();
 function Placeholder({ name }: { name: string }) {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>{name} screen not ready yet 🚧</Text>
+      <Text>{name} screen not ready yet. 🚧</Text>
     </View>
   );
 }
