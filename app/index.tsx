@@ -22,7 +22,7 @@ function Placeholder({ name }: { name: string }) {
 export default function App() {
   return (
 
-      <Tab.Navigator>
+      <Tab.Navigator screenOptions={{ headerShown: false }}>
         <Tab.Screen
           name="Adiba"
           component={AdibaPage || (() => <Placeholder name="Adiba" />)}
