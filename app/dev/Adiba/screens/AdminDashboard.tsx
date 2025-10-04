@@ -58,8 +58,7 @@ export default function AdminDashboard() {
               title={item.title}
               category={item.category}
               status={item.status}
-              onPress={() => handleComplaintPress(item)}
-            />
+              onPress={() => handleComplaintPress(item)} createdAt={""}            />
           )}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
