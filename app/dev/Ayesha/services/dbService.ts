@@ -1,45 +1,57 @@
 // services/dbService.ts
-import { onValue, push, ref, remove, set, update } from "firebase/database";
+import { get, onValue, push, ref, remove, set, update } from "firebase/database";
 import { db } from "../../../../lib/firebaseConfig";
+
+// ---------------------- Interfaces ----------------------
+export interface StudentProfile {
+  uid: string;
+  name: string;
+  email: string;
+  roll: string;
+  department: string;
+  batch: string;
+  hall: string;
+  createdAt: number;
+}
+
+export type ComplaintStatus = "Pending" | "In Progress" | "Solved";
 
 export interface Complaint {
   id?: string;
   title: string;
   description: string;
-  status: "To Do" | "In Progress" | "Done";
-  createdBy: string;
+  category: string; // chosen from predefined list
+  zone: string;     // chosen from predefined list
+  imageUrl?: string;
+  status: ComplaintStatus;
+  createdBy: string; // uid of student
   createdAt: number;
 }
 
-export interface UserProfile {
-  uid: string;
-  name: string;
-  email: string;
-  role?: "user" | "admin";
-  createdAt: number;
-}
-
-export const createUserProfile = async (user: UserProfile) => {
-  const userRef = ref(db, `users/${user.uid}`);
-  await set(userRef, {
-    ...user,
-    createdAt: user.createdAt || Date.now(),
+// ---------------------- Student Profile ----------------------
+export const createStudentProfile = async (student: StudentProfile) => {
+  const studentRef = ref(db, `students/${student.uid}`);
+  await set(studentRef, {
+    ...student,
+    createdAt: student.createdAt || Date.now(),
   });
 };
+
+// ---------------------- Complaints ----------------------
 
 // Add a new complaint
 export const addComplaint = async (complaint: Complaint): Promise<string> => {
   const complaintRef = push(ref(db, "complaints"));
   await set(complaintRef, {
     ...complaint,
-    status: "To Do",
+    status: "Pending",
     createdAt: Date.now(),
   });
   return complaintRef.key!;
 };
 
-// Listen to all complaints in realtime
-export const listenComplaints = (callback: (data: Complaint[]) => void) => {
+// Display all complaints (admin use)
+export const listenAllComplaints = (callback: (data: Complaint[]) => void) => {
   const complaintsRef = ref(db, "complaints");
   return onValue(complaintsRef, (snapshot) => {
     const data = snapshot.val() || {};
@@ -51,12 +63,53 @@ export const listenComplaints = (callback: (data: Complaint[]) => void) => {
   });
 };
 
-// Update complaint status
-export const updateComplaintStatus = async (id: string, status: "To Do" | "In Progress" | "Done") => {
-  await update(ref(db, `complaints/${id}`), { status });
+// Display complaints of the current user
+export const listenUserComplaints = (uid: string, callback: (data: Complaint[]) => void) => {
+  const complaintsRef = ref(db, "complaints");
+  return onValue(complaintsRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    const list: Complaint[] = Object.entries(data)
+      .map(([id, val]: [string, any]) => ({ id, ...val }))
+      .filter((complaint) => complaint.createdBy === uid);
+    callback(list);
+  });
 };
 
-// Delete complaint
-export const deleteComplaint = async (id: string) => {
-  await remove(ref(db, `complaints/${id}`));
+// Display complaints filtered by category
+export const listenComplaintsByCategory = (category: string, callback: (data: Complaint[]) => void) => {
+  const complaintsRef = ref(db, "complaints");
+  return onValue(complaintsRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    const list: Complaint[] = Object.entries(data)
+      .map(([id, val]: [string, any]) => ({ id, ...val }))
+      .filter((complaint) => complaint.category === category);
+    callback(list);
+  });
+};
+
+// Delete complaint by the student who created it
+export const deleteUserComplaint = async (uid: string, id: string) => {
+  const complaintRef = ref(db, `complaints/${id}`);
+  const snapshot = await get(complaintRef);
+  if (snapshot.exists()) {
+    const complaint = snapshot.val();
+    if (complaint.createdBy === uid) {
+      await remove(complaintRef);
+      return true;
+    } else {
+      throw new Error("Unauthorized: You can only delete your own complaints.");
+    }
+  }
+  return false;
+};
+
+// Delete complaint by the admin
+export const deleteComplaintByAdmin = async (id: string) => {
+  const complaintRef = ref(db, `complaints/${id}`);
+  await remove(complaintRef);
+};
+
+// Update complaint status (admin only)
+export const updateComplaintStatus = async (id: string, status: ComplaintStatus) => {
+  await update(ref(db, `complaints/${id}`), { status });
 };
