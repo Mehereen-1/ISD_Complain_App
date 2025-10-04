@@ -1,0 +1,62 @@
+export const mockComplaints = [
+  {
+    id: "1",
+    title: "Leaky tap in Room 204",
+    category: "Maintenance",
+    status: "Pending",
+    createdAt: "1 day ago",
+    timestamp: "2025-10-03T08:30:00Z",
+    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400",
+    student: {
+      name: "John Doe",
+      id: "STU001",
+      email: "john.doe@university.edu",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100"
+    }
+  },
+  {
+    id: "2",
+    title: "Noise complaint from neighbors",
+    category: "Community",
+    status: "Resolved",
+    createdAt: "3 days ago",
+    timestamp: "2025-10-01T14:20:00Z",
+    image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400",
+    student: {
+      name: "Jane Smith",
+      id: "STU002",
+      email: "jane.smith@university.edu",
+      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100"
+    }
+  },
+  {
+    id: "3",
+    title: "Street light broken near entrance",
+    category: "Infrastructure",
+    status: "In Progress",
+    createdAt: "1 day ago",
+    timestamp: "2025-10-03T05:15:00Z",
+    image: "https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?w=400",
+    student: {
+      name: "Mike Johnson",
+      id: "STU003",
+      email: "mike.johnson@university.edu",
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100"
+    }
+  },
+  {
+    id: "4",
+    title: "Wi-Fi connectivity issues",
+    category: "Technical",
+    status: "Pending",
+    createdAt: "3 days ago",
+    timestamp: "2025-10-01T03:45:00Z",
+    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400",
+    student: {
+      name: "Sarah Wilson",
+      id: "STU004",
+      email: "sarah.wilson@university.edu",
+      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100"
+    }
+  },
+];

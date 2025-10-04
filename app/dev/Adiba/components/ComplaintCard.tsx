@@ -31,24 +31,24 @@ const ComplaintCard: React.FC<ComplaintCardProps> = ({ title, status, category, 
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.title} numberOfLines={2}>{title}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusBackgroundColor() }]}>
-          <Text style={[styles.statusText, { color: getStatusColor() }]}>
-            {status}
-          </Text>
+      <View style={styles.cardContent}>
+        <View style={styles.leftContent}>
+          <Text style={styles.title} numberOfLines={2}>{title}</Text>
+          <View style={styles.categoryContainer}>
+            <Text style={styles.categoryLabel}>CATEGORY</Text>
+            <Text style={styles.category}>{category}</Text>
+          </View>
         </View>
-      </View>
-      
-      <View style={styles.cardFooter}>
-        <View style={styles.categoryContainer}>
-          <Text style={styles.categoryLabel}>Category</Text>
-          <Text style={styles.category}>{category}</Text>
+        
+        <View style={styles.rightContent}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusBackgroundColor() }]}>
+            <Text style={[styles.statusText, { color: getStatusColor() }]}>
+              {status.toUpperCase()}
+            </Text>
+          </View>
+          <Text style={styles.detailsText}>DETAILS</Text>
+          <Text style={styles.timeText}>{createdAt.toUpperCase()}</Text>
         </View>
-        <View style={styles.timeContainer}>
-          <Text style={styles.time}>{createdAt}</Text>
-        </View>
-        <Text style={styles.arrow}>Details</Text>
       </View>
     </TouchableOpacity>
   );
@@ -68,19 +68,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.rosyBrown,
   },
-  cardHeader: {
+  cardContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+  },
+  leftContent: {
+    flex: 1,
+    marginRight: 16,
+  },
+  rightContent: {
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    minHeight: 80,
   },
   title: {
     fontSize: 18,
     fontWeight: "700",
     color: colors.white,
-    flex: 1,
-    marginRight: 12,
     lineHeight: 24,
+    marginBottom: 12,
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -88,26 +95,20 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     minWidth: 80,
     alignItems: 'center',
+    marginBottom: 8,
   },
   statusText: {
     fontSize: 12,
     fontWeight: "600",
-    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   categoryContainer: {
-    flex: 1,
+    marginTop: 4,
   },
   categoryLabel: {
     fontSize: 12,
     color: colors.platinum2,
     fontWeight: '500',
-    textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 2,
   },
@@ -116,19 +117,18 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: '600',
   },
-  arrow: {
-    fontSize: 14,
+  detailsText: {
+    fontSize: 12,
     color: colors.platinum2,
     fontWeight: '600',
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
-  timeContainer: {
-    alignItems: 'flex-end',
-    marginRight: 12,
-  },
-  time: {
+  timeText: {
     fontSize: 12,
     color: colors.white,
     fontWeight: '600',
+    letterSpacing: 0.5,
   },
 });
 
