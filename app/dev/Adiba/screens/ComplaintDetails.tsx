@@ -23,6 +23,7 @@ export default function ComplaintDetails() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showStudentDetailsModal, setShowStudentDetailsModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState("");
 
   const getStatusColor = (status: string) => {
@@ -115,9 +116,19 @@ export default function ComplaintDetails() {
             <Image source={{ uri: studentAvatar as string }} style={styles.studentAvatar} />
             <View style={styles.studentInfo}>
               <Text style={styles.studentName}>{studentName}</Text>
-              <Text style={styles.studentId}>ID: {studentId}</Text>
-              <Text style={styles.studentEmail}>{studentEmail}</Text>
+              <Text style={styles.studentId}>Roll: {studentId}</Text>
             </View>
+          </View>
+          
+          <View style={styles.studentContactSection}>
+            <TouchableOpacity 
+              style={[styles.contactButton, styles.detailsButton, styles.fullWidthButton]}
+              onPress={() => setShowStudentDetailsModal(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.contactButtonIcon}>👤</Text>
+              <Text style={[styles.contactButtonText, styles.detailsButtonText]}>Student Details</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -278,6 +289,99 @@ export default function ComplaintDetails() {
         </View>
       </View>
     )}
+
+    {/* Student Details Modal */}
+    {showStudentDetailsModal && (
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity 
+          style={styles.modalBackdrop}
+          onPress={() => setShowStudentDetailsModal(false)}
+          activeOpacity={1}
+        />
+        <View style={styles.studentDetailsModal}>
+          <View style={styles.studentDetailsHeader}>
+            <Text style={styles.studentDetailsTitle}>👤 Student Profile</Text>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setShowStudentDetailsModal(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.closeButtonText}>×</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.studentDetailsContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.studentProfileSection}>
+              <Image source={{ uri: studentAvatar as string }} style={styles.studentDetailsAvatar} />
+              <Text style={styles.studentDetailsName}>{studentName}</Text>
+              <Text style={styles.studentDetailsRoll}>Roll: {studentId}</Text>
+            </View>
+
+            <View style={styles.studentInfoGrid}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>📧 Email</Text>
+                <Text style={styles.infoValue}>{studentEmail}</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>📞 Phone</Text>
+                <Text style={styles.infoValue}>+880 1712-345678</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>🎓 Department</Text>
+                <Text style={styles.infoValue}>Computer Science & Engineering</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>📅 Batch</Text>
+                <Text style={styles.infoValue}>2021-2025</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>🏠 Hall</Text>
+                <Text style={styles.infoValue}>Shaheed Rafiq Hall</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>📍 Current Address</Text>
+                <Text style={styles.infoValue}>Room 204, Building A, University Campus</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>📊 Year</Text>
+                <Text style={styles.infoValue}>4th Year (Final)</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>🆔 Student ID</Text>
+                <Text style={styles.infoValue}>{studentId}</Text>
+              </View>
+            </View>
+
+            <View style={styles.quickActions}>
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => {/* Handle email */}}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.quickActionIcon}>✉️</Text>
+                <Text style={styles.quickActionText}>Send Email</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => {/* Handle call */}}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.quickActionIcon}>📞</Text>
+                <Text style={styles.quickActionText}>Call Student</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    )}
     </>
   );
 }
@@ -350,6 +454,71 @@ const styles = StyleSheet.create({
   studentEmail: {
     fontSize: 14,
     color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  studentPhone: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  studentContactSection: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.platinum,
+  },
+  contactTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  contactButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  contactButton: {
+    flex: 1,
+    backgroundColor: colors.platinum,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  detailsButton: {
+    backgroundColor: colors.roseTaupe,
+  },
+  contactButtonIcon: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  contactButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  detailsButtonText: {
+    color: colors.white,
+  },
+  iconOnlyButton: {
+    paddingVertical: 16,
+    justifyContent: 'center',
+    minHeight: 56,
+  },
+  contactButtonIconLarge: {
+    fontSize: 24,
+  },
+  fullWidthButton: {
+    width: '100%',
+    maxWidth: '100%',
   },
   card: {
     backgroundColor: colors.rosyBrown,
@@ -597,5 +766,126 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.white,
+  },
+  // Student Details Modal Styles
+  studentDetailsModal: {
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    width: '95%',
+    maxWidth: 450,
+    maxHeight: '85%',
+    overflow: 'hidden',
+    shadowColor: colors.cardShadow,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  studentDetailsHeader: {
+    backgroundColor: colors.roseTaupe,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  studentDetailsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.white,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.white,
+    lineHeight: 22,
+  },
+  studentDetailsContent: {
+    flex: 1,
+    padding: 20,
+  },
+  studentProfileSection: {
+    alignItems: 'center',
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.platinum,
+    marginBottom: 20,
+  },
+  studentDetailsAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 12,
+  },
+  studentDetailsName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  studentDetailsRoll: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  studentInfoGrid: {
+    marginBottom: 20,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.platinum,
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    flex: 2,
+    textAlign: 'right',
+    fontWeight: '500',
+  },
+  quickActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  quickActionButton: {
+    flex: 1,
+    backgroundColor: colors.roseTaupe,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: colors.roseTaupe,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  quickActionIcon: {
+    fontSize: 18,
+    marginBottom: 6,
+  },
+  quickActionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.white,
+    textAlign: 'center',
   },
 });
