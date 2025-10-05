@@ -1,104 +1,57 @@
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import {
+  Complaint,
+  listenAllComplaints
+} from "../../Ayesha/services/dbService";
 import ComplaintCard from "../components/ComplaintCard";
 import FilterBar from "../components/FilterBar";
 import { colors } from "../constants/colors";
 
-const mockComplaints = [
-  {
-    id: "1",
-    title: "Leaky tap in Room 204",
-    category: "Maintenance",
-    status: "Pending",
-    createdAt: "1 day ago",
-    timestamp: "2025-10-03T08:30:00Z",
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400",
-    student: {
-      name: "John Doe",
-      id: "STU001",
-      email: "john.doe@university.edu",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100"
-    }
-  },
-  {
-    id: "2",
-    title: "Noise complaint from neighbors",
-    category: "Community",
-    status: "Resolved",
-    createdAt: "3 days ago",
-    timestamp: "2025-10-01T14:20:00Z",
-    image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400",
-    student: {
-      name: "Jane Smith",
-      id: "STU002",
-      email: "jane.smith@university.edu",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100"
-    }
-  },
-  {
-    id: "3",
-    title: "Street light broken near entrance",
-    category: "Infrastructure",
-    status: "In Progress",
-    createdAt: "1 day ago",
-    timestamp: "2025-10-03T05:15:00Z",
-    image: "https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?w=400",
-    student: {
-      name: "Mike Johnson",
-      id: "STU003",
-      email: "mike.johnson@university.edu",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100"
-    }
-  },
-  {
-    id: "4",
-    title: "Wi-Fi connectivity issues",
-    category: "Technical",
-    status: "Pending",
-    createdAt: "3 days ago",
-    timestamp: "2025-10-01T03:45:00Z",
-    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400",
-    student: {
-      name: "Sarah Wilson",
-      id: "STU004",
-      email: "sarah.wilson@university.edu",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100"
-    }
-  },
-];
+// ...existing code...
 
 export default function ComplaintsTab() {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState("All");
-  const [complaints, setComplaints] = useState(mockComplaints);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const prevComplaintIdsRef = React.useRef<string[]>([]);
+  const [newComplaintNotif, setNewComplaintNotif] = useState<string | null>(null);
 
   const filters = ["All", "Pending", "In Progress", "Resolved"];
 
-  // Check for status updates
   useEffect(() => {
-    const checkForUpdates = () => {
-      const updatedStatuses = localStorage.getItem('complaintStatusUpdates');
-      if (updatedStatuses) {
-        const updates = JSON.parse(updatedStatuses);
-        setComplaints(prev => prev.map(complaint => {
-          const update = updates[complaint.id];
-          return update ? { ...complaint, status: update.status } : complaint;
-        }));
-        localStorage.removeItem('complaintStatusUpdates');
+    // Listen to all complaints in realtime
+    const unsubscribe = listenAllComplaints((data) => {
+      setComplaints(data);
+      const currentIds = data.map(c => c.id).filter((id): id is string => typeof id === 'string');
+      // Detect new complaint
+      if (prevComplaintIdsRef.current.length > 0 && currentIds.length > prevComplaintIdsRef.current.length) {
+        // Find new complaint(s)
+        const newIds = currentIds.filter(id => !prevComplaintIdsRef.current.includes(id));
+        if (newIds.length > 0) {
+          const newComplaint = data.find(c => c.id === newIds[0]);
+          if (newComplaint) {
+            setNewComplaintNotif(`New complaint received: ${newComplaint.title}`);
+            // Add admin notification in DB with complaintId
+            import("../services/adminNotificationService").then(({ addAdminNotification }) => {
+              addAdminNotification({
+                type: "new",
+                title: "New Complaint Received",
+                message: `Complaint: ${newComplaint.title}`,
+                time: Date.now(),
+                read: false,
+                complaintId: newComplaint.id,
+              });
+            });
+          }
+        }
       }
-
-      const deletedComplaints = localStorage.getItem('deletedComplaints');
-      if (deletedComplaints) {
-        const deletedIds = JSON.parse(deletedComplaints);
-        setComplaints(prev => prev.filter(complaint => !deletedIds.includes(complaint.id)));
-        localStorage.removeItem('deletedComplaints');
-      }
+      prevComplaintIdsRef.current = currentIds;
+    });
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
     };
-
-    checkForUpdates();
-    const interval = setInterval(checkForUpdates, 1000);
-    return () => clearInterval(interval);
   }, []);
 
   const filteredComplaints =
@@ -106,7 +59,7 @@ export default function ComplaintsTab() {
       ? complaints
       : complaints.filter((c) => c.status === selectedFilter);
 
-  const handleComplaintPress = (complaint: any) => {
+  const handleComplaintPress = (complaint: Complaint) => {
     router.push({
       pathname: "/dev/Adiba/screens/ComplaintDetails",
       params: {
@@ -115,18 +68,23 @@ export default function ComplaintsTab() {
         category: complaint.category,
         status: complaint.status,
         createdAt: complaint.createdAt,
-        timestamp: complaint.timestamp,
-        image: complaint.image,
-        studentName: complaint.student.name,
-        studentId: complaint.student.id,
-        studentEmail: complaint.student.email,
-        studentAvatar: complaint.student.avatar,
+        image: complaint.imageUrl,
+        studentName: complaint.createdBy,
+        // Add more fields if needed
       },
     });
   };
 
   return (
     <>
+      {/* Toast for new complaint notification */}
+      {newComplaintNotif && (
+        <View style={{position: 'absolute', top: 60, left: 0, right: 0, zIndex: 999, alignItems: 'center'}}>
+          <View style={{backgroundColor: colors.roseTaupe, padding: 12, borderRadius: 16, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4}}>
+            <Text style={{color: colors.white, fontWeight: '700'}}>{newComplaintNotif}</Text>
+          </View>
+        </View>
+      )}
       {/* Filter Bar */}
       <View style={styles.filterSection}>
         <FilterBar

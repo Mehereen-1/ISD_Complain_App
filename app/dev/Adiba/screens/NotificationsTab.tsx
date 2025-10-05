@@ -1,59 +1,49 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../constants/colors";
+import {
+    AdminNotification,
+    deleteAdminNotification,
+    listenAdminNotifications,
+    markAdminNotificationRead
+} from "../services/adminNotificationService";
 
 interface Notification {
   id: string;
   title: string;
   message: string;
-  time: string;
+  time: number;
   type: 'new' | 'status' | 'resolved';
   read: boolean;
 }
 
-export default function NotificationsTab() {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "1",
-      title: "New Complaint Received",
-      message: "A new maintenance request has been submitted for Room 204",
-      time: "5 minutes ago",
-      type: "new",
-      read: false,
-    },
-    {
-      id: "2",
-      title: "Complaint Resolved",
-      message: "Wi-Fi issue in Building A has been successfully resolved",
-      time: "2 hours ago",
-      type: "resolved",
-      read: false,
-    },
-    {
-      id: "3",
-      title: "Status Updated",
-      message: "Leaky tap complaint is now in progress",
-      time: "1 day ago",
-      type: "status",
-      read: true,
-    },
-    {
-      id: "4",
-      title: "New Complaint Received",
-      message: "Street light issue reported near main entrance",
-      time: "2 days ago",
-      type: "new",
-      read: true,
-    },
-    {
-      id: "5",
-      title: "Complaint Resolved",
-      message: "Noise complaint from dormitory has been resolved",
-      time: "3 days ago",
-      type: "resolved",
-      read: true,
-    },
-  ]);
+interface NotificationsTabProps {
+  setUnreadCount?: (count: number) => void;
+}
+
+export default function NotificationsTab({ setUnreadCount }: NotificationsTabProps) {
+  const router = require('expo-router').useRouter();
+  // Helper to extract complaint ID from notification
+  function getComplaintId(notification: AdminNotification): string | null {
+    // If notification has complaintId field, use it
+    if ((notification as any).complaintId) return (notification as any).complaintId;
+    // Otherwise, try to extract from message (legacy)
+    const match = notification.message.match(/ID: ([^\s)]+)/);
+    return match ? match[1] : null;
+  }
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+  React.useEffect(() => {
+    const unsubscribe = listenAdminNotifications((data) => {
+      // Show only notifications from last 24 hours
+      const now = Date.now();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      const recent = data.filter(n => n.time && (now - n.time < oneDayMs));
+      setNotifications(recent);
+    });
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, []);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -65,24 +55,29 @@ export default function NotificationsTab() {
   };
 
   const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
-    );
+    markAdminNotificationRead(id);
+    setNotifications(prev => prev.map(notif =>
+      notif.id === id ? { ...notif, read: true } : notif
+    ));
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, read: true }))
-    );
+    notifications.forEach(n => {
+      if (!n.read) markAdminNotificationRead(n.id!);
+    });
+    setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
   };
 
   const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
+  deleteAdminNotification(id);
+  setNotifications(prev => prev.filter(notif => notif.id !== id));
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  // Update unread count in parent if prop provided
+  React.useEffect(() => {
+    if (setUnreadCount) setUnreadCount(unreadCount);
+  }, [unreadCount, setUnreadCount]);
 
   return (
     <View style={styles.container}>
@@ -106,11 +101,17 @@ export default function NotificationsTab() {
       {notifications.map((notification) => (
         <TouchableOpacity
           key={notification.id}
-          style={[
-            styles.notificationCard,
-            !notification.read && styles.unreadCard
-          ]}
-          onPress={() => markAsRead(notification.id)}
+          style={[styles.notificationCard, !notification.read && styles.unreadCard]}
+          onPress={() => {
+            markAsRead(notification.id!);
+            const complaintId = getComplaintId(notification);
+            if (complaintId) {
+              router.push({
+                pathname: "/dev/Adiba/screens/ComplaintDetails",
+                params: { id: complaintId },
+              });
+            }
+          }}
           activeOpacity={0.8}
         >
           <View style={styles.notificationContent}>
@@ -119,22 +120,18 @@ export default function NotificationsTab() {
                 {getNotificationIcon(notification.type)}
               </Text>
               <View style={styles.notificationInfo}>
-                <Text style={[
-                  styles.notificationTitle,
-                  !notification.read && styles.unreadTitle
-                ]}>
+                <Text style={[styles.notificationTitle, !notification.read && styles.unreadTitle]}>
                   {notification.title}
                 </Text>
-                <Text style={styles.notificationTime}>{notification.time}</Text>
+                <Text style={styles.notificationTime}>{new Date(notification.time).toLocaleString()}</Text>
               </View>
               {!notification.read && <View style={styles.unreadBadge} />}
             </View>
             <Text style={styles.notificationText}>{notification.message}</Text>
           </View>
-          
           <TouchableOpacity
             style={styles.deleteButton}
-            onPress={() => deleteNotification(notification.id)}
+            onPress={() => deleteNotification(notification.id!)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Text style={styles.deleteButtonText}>×</Text>
