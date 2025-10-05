@@ -1,12 +1,12 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+﻿import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 // import { NavigationContainer } from '@react-navigation/native';
 import React from 'react';
 import { Text, View } from 'react-native';
 
 // Import dev screens (replace with actual files later)
 import AdibaPage from './dev/Adiba/Page3';
+//import AyeshaPage from './dev/Ayesha/Page1';
 import AyeshaPage from './dev/Ayesha/homepage';
-import { UserProvider } from './dev/Ayesha/services/userContext';
 import RajorshiPage from './dev/Rajorshi/Page2';
 const Tab = createBottomTabNavigator();
 
@@ -21,7 +21,6 @@ function Placeholder({ name }: { name: string }) {
 
 export default function App() {
   return (
-    <UserProvider>
       <Tab.Navigator screenOptions={{ headerShown: false }}>
         <Tab.Screen
           name="Adiba"
@@ -36,6 +35,5 @@ export default function App() {
           component={RajorshiPage || (() => <Placeholder name="Rajorshi" />)}
         />
       </Tab.Navigator>
-    </UserProvider>
   );
 }
