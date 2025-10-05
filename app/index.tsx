@@ -1,22 +1,14 @@
-﻿import { useRouter } from 'expo-router';
+﻿import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+// import { NavigationContainer } from '@react-navigation/native';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function Index() {
-  const router = useRouter();
+// Import dev screens (replace with actual files later)
+//import AyeshaPage from './dev/Ayesha/Page1';
+const Tab = createBottomTabNavigator();
 
-  const navigateToAdiba = () => {
-    router.push('/dev/Adiba/Page3');
-  };
-
-  const navigateToAyesha = () => {
-    router.push('/dev/Ayesha/Page1');
-  };
-
-  const navigateToRajorshi = () => {
-    router.push('/dev/Rajorshi/Page2');
-  };
-
+// Fallback screen if someone hasn’t made theirs yet
+function Placeholder({ name }: { name: string }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}> ISD Complaint App</Text>
