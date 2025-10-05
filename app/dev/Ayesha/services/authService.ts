@@ -6,32 +6,62 @@ import {
   signOut,
   User
 } from "firebase/auth";
-import { auth } from "../../../../lib/firebaseConfig";
-import { createUserProfile, UserProfile } from "./dbService";
+import { get, ref } from "firebase/database";
+import { auth, db } from "../../../../lib/firebaseConfig";
+import { createStudentProfile, StudentProfile } from "./dbService";
 // Sign up
-export const signUp = async (email: string, password: string, name?: string): Promise<UserProfile> => {
+export const signUp = async (
+  email: string,
+  password: string,
+  name: string,
+  roll: string,
+  department: string,
+  batch: string,
+  hall: string
+): Promise<StudentProfile> => {
+  // Create user in Firebase Auth
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user: User = userCredential.user;
 
-  // Build UserProfile object
-  const appUser: UserProfile = {
+  // Build StudentProfile object
+  const student: StudentProfile = {
     uid: user.uid,
-    name: name || "Anonymous",
+    name,
     email: user.email || "",
-    role: "user",
+    roll,
+    department,
+    batch,
+    hall,
     createdAt: Date.now(),
   };
 
-  // Save user profile in Realtime DB
-  await createUserProfile(appUser);
+  // Save StudentProfile in Realtime DB
+  await createStudentProfile(student);
 
-  return appUser;
+  return student;
 };
 
 // Sign in
-export const signIn = async (email: string, password: string): Promise<User> => {
+export const signIn = async (email: string, password: string): Promise<StudentProfile> => {
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
-  return userCredential.user;
+  const user: User = userCredential.user;
+
+  // Fetch student profile from DB
+  const studentRef = ref(db, `students/${user.uid}`);
+  const snapshot = await get(studentRef);
+
+  if (!snapshot.exists()) {
+    throw new Error("No student profile found for this account.");
+  }
+
+  const profile = snapshot.val();
+
+  const student: StudentProfile = {
+    uid: user.uid,
+    ...profile,
+  };
+
+  return student;
 };
 
 // Sign out
