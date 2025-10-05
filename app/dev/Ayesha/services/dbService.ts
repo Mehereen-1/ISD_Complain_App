@@ -111,7 +111,7 @@ export const listenAllComplaints = (callback: (data: Complaint[]) => void) => {
     const list: Complaint[] = Object.entries(data).map(([id, val]: [string, any]) => ({
       id,
       ...val,
-    }));
+    })).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // Sort by createdAt descending (newest first)
     callback(list);
   });
 };
@@ -123,7 +123,8 @@ export const listenUserComplaints = (uid: string, callback: (data: Complaint[]) 
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((complaint) => complaint.createdBy === uid);
+      .filter((complaint) => complaint.createdBy === uid)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // Sort by createdAt descending (newest first)
     callback(list);
   });
 };
@@ -135,7 +136,8 @@ export const listenComplaintsByCategory = (category: string, callback: (data: Co
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((complaint) => complaint.category === category);
+      .filter((complaint) => complaint.category === category)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // Sort by createdAt descending (newest first)
     callback(list);
   });
 };

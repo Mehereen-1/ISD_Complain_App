@@ -1,4 +1,4 @@
-import { onValue, push, ref, remove, set } from "firebase/database";
+import { get, onValue, push, ref, remove, set } from "firebase/database";
 import { db } from "../../../../lib/firebaseConfig";
 
 export interface AdminNotification {
@@ -13,9 +13,29 @@ export interface AdminNotification {
 
 // Add a notification to the database
 export const addAdminNotification = async (notif: Omit<AdminNotification, "id">) => {
-  const notifRef = push(ref(db, "adminNotifications"));
-  await set(notifRef, { ...notif });
-  return notifRef.key!;
+  const notifRef = ref(db, "adminNotifications");
+  const snapshot = await get(notifRef);
+  const existingNotifications = snapshot.val() || {};
+
+  // Fix type mismatch in `some` method
+  const isDuplicate = Object.values(existingNotifications).some(
+    (existingNotif) => {
+      const notifTyped = existingNotif as AdminNotification; // Explicitly cast to AdminNotification
+      return notifTyped.complaintId === notif.complaintId && notifTyped.type === notif.type;
+    }
+  );
+
+  if (isDuplicate) {
+    console.log("Duplicate notification detected. Skipping addition.");
+    return null;
+  }
+
+  const newNotifRef = push(notifRef);
+  await set(newNotifRef, {
+    ...notif,
+    message: notif.title, // Only include the complaint title in the message
+  });
+  return newNotifRef.key!;
 };
 
 // Listen to all admin notifications in real time
@@ -23,10 +43,10 @@ export const listenAdminNotifications = (callback: (data: AdminNotification[]) =
   const notifRef = ref(db, "adminNotifications");
   return onValue(notifRef, (snapshot) => {
     const data = snapshot.val() || {};
-    const list: AdminNotification[] = Object.entries(data).map(([id, val]: [string, any]) => ({
-      id,
-      ...val,
-    }));
+    const list: AdminNotification[] = Object.entries(data)
+      .map(([id, val]: [string, any]) => ({ id, ...val }))
+      .sort((a, b) => b.time - a.time); // Sort by time in descending order
+
     callback(list);
   });
 };

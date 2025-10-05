@@ -87,6 +87,7 @@ export default function ComplaintDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showStudentDetailsModal, setShowStudentDetailsModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState("");
   const [showStatusPickers, setShowStatusPickers] = useState(false);
 
@@ -216,9 +217,9 @@ export default function ComplaintDetails() {
           <Text style={styles.title}>{complaint?.title || "Loading..."}</Text>
           {/* Complaint Image */}
           {complaint?.imageUrl && (
-            <View style={styles.imageContainer}>
+            <TouchableOpacity style={styles.imageContainer} onPress={() => setShowImageModal(true)} activeOpacity={0.8}>
               <Image source={{ uri: complaint.imageUrl }} style={styles.complaintImage} />
-            </View>
+            </TouchableOpacity>
           )}
 
           <View style={styles.detailRow}>
@@ -293,6 +294,31 @@ export default function ComplaintDetails() {
         </View>
       </View>
     </ScrollView>
+
+    {/* Image Zoom Modal */}
+    {showImageModal && complaint?.imageUrl && (
+      <View style={styles.imageModalOverlay}>
+        <TouchableOpacity 
+          style={styles.imageModalBackdrop}
+          onPress={() => setShowImageModal(false)}
+          activeOpacity={1}
+        />
+        <View style={styles.imageModalContainer}>
+          <TouchableOpacity 
+            style={styles.closeImageButton}
+            onPress={() => setShowImageModal(false)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.closeImageButtonText}>×</Text>
+          </TouchableOpacity>
+          <Image 
+            source={{ uri: complaint.imageUrl }} 
+            style={styles.zoomedImage}
+            resizeMode="contain"
+          />
+        </View>
+      </View>
+    )}
 
     {/* Status Change Confirmation Modal */}
     {showStatusModal && (
@@ -982,5 +1008,51 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.white,
     textAlign: 'center',
+  },
+  // Image Modal Styles
+  imageModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    zIndex: 2000,
+  },
+  imageModalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  imageModalContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeImageButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2001,
+  },
+  closeImageButtonText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.white,
+  },
+  zoomedImage: {
+    width: '100%',
+    height: '100%',
   },
 });
