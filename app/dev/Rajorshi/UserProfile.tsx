@@ -1,5 +1,5 @@
 import { get, ref } from 'firebase/database';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { auth, db } from '../../../lib/firebaseConfig.js'; // adjust path if needed
 import { StudentProfile, editProfile } from '../Ayesha/services/dbService';
