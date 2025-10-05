@@ -33,7 +33,9 @@ export default function SubmitComplaint() {
         description: complaint.description,
         status: 'Pending',
         createdBy: complaint.createdBy,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        category: '',
+        zone: ''
       });
       
       setComplaint({ title: '', description: '', createdBy: 'Student' });
