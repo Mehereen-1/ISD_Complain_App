@@ -1,8 +1,9 @@
 import { Picker } from "@react-native-picker/picker";
 import React, { useState } from "react";
-import { Button, ScrollView, StyleSheet, Text, TextInput } from "react-native";
+import { Alert, Button, Image, ScrollView, StyleSheet, Text, TextInput } from "react-native";
 import { auth } from "../../../../lib/firebaseConfig";
 import { addComplaint, Complaint } from "../services/dbService";
+import { pickAndUploadImage } from "../services/uploadImageToCloudinary";
 
 const predefinedCategories = ["Plumbing", "Electrical", "Cleaning", "Other"];
 const predefinedZones = ["Zone A", "Zone B", "Zone C", "Zone D"];
@@ -16,6 +17,16 @@ const ComplaintForm: React.FC = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const pickImage = async () => {
+    const url = await pickAndUploadImage();
+    if (url) {
+      setImageUrl(url);
+      Alert.alert("Success", "Image uploaded successfully!");
+    } else {
+      Alert.alert("Error", "Failed to upload image.");
+    }
+  };
+
   const handleSubmit = async () => {
     const currentUser = auth.currentUser;
     if (!currentUser) {
@@ -24,19 +35,26 @@ const ComplaintForm: React.FC = () => {
     }
 
     setLoading(true);
+
     try {
+
+      console.log("🔥 PICKED IMAGE URL:", imageUrl);
+
+
       const newComplaint: Complaint = {
-        title,
-        description,
-        category,
-        zone,
-        imageUrl,
-        status: "Pending",
-        createdBy: currentUser.uid,
-        createdAt: Date.now(),
-      };
+      title: title || "",          // never undefined
+      description: description || "",
+      category: category || "Other",
+      zone: zone || "Zone A",
+      imageUrl: imageUrl,    // empty string if no image
+      status: "Pending",
+      createdBy: currentUser.uid,
+      createdAt: Date.now(),
+};
 
       const complaintId = await addComplaint(newComplaint);
+      console.log("New complaint object:", newComplaint);
+
       setMessage(`Complaint submitted! ID: ${complaintId}`);
 
       setTitle("");
@@ -91,12 +109,13 @@ const ComplaintForm: React.FC = () => {
         ))}
       </Picker>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Image URL (optional)"
-        value={imageUrl}
-        onChangeText={setImageUrl}
-      />
+      <Button title="Pick an Image" onPress={pickImage} />
+      {imageUrl && (
+        <Image
+          source={{ uri: imageUrl }}
+          style={{ width: 200, height: 200, marginVertical: 10 }}
+        />
+      )}
 
       <Button title={loading ? "Submitting..." : "Submit Complaint"} onPress={handleSubmit} />
     </ScrollView>

@@ -41,6 +41,10 @@ export default function Home() {
       <Button title="Go to Complaint Form" onPress={() => router.push("/dev/Ayesha/complaint/form")} />
       <Button title="Delete Complain by User" onPress={() => router.push("/dev/Ayesha/complaint/list")} />
       <Button title="My Complaints" onPress={() => router.push("/dev/Ayesha/complaint/mylist")} />
+      <Button title="Update Complaint Status" onPress={() => router.push("/dev/Ayesha/complaint/updateComplain")} />
+      <Button title="Complaints by Category" onPress={() => router.push("/dev/Ayesha/complaint/complainCategory")} />
+      <Button title="Complaints by Status" onPress={() => router.push("/dev/Ayesha/complaint/complainStatus")} />
+      <Button title="Update by Student" onPress={() => router.push("/dev/Ayesha/complaint/updateByStudent")} />
       <Button title="Logout" onPress={handleLogout} />
     </View>
   );
@@ -52,6 +56,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    gap: 10,
   },
   title: {
     fontSize: 24,
