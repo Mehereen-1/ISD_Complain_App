@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import {
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { Complaint, listenComplaints } from '../Ayesha/services/dbService';
+import { Complaint, listenAllComplaints } from '../Ayesha/services/dbService';
 import { colors } from './colors';
 
-const STATUS_OPTIONS = ['All', 'To Do', 'In Progress', 'Done'];
+const STATUS_OPTIONS = ['All', 'Pending', 'In Progress', 'Solved'];
 
 export default function ComplaintsFeed() {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -18,39 +18,34 @@ export default function ComplaintsFeed() {
   const [selectedStatus, setSelectedStatus] = useState('All');
 
   useEffect(() => {
-    const unsubscribe = listenComplaints((data) => {
-      // Sort by most recent first
+    const unsubscribe = listenAllComplaints((data) => {
       const sortedData = data.sort((a, b) => b.createdAt - a.createdAt);
       setComplaints(sortedData);
       setRefreshing(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-  };
+  const onRefresh = () => setRefreshing(true);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'To Do': return colors.danger;
+      case 'Pending': return colors.danger;
       case 'In Progress': return colors.warning;
-      case 'Done': return colors.success;
+      case 'Solved': return colors.success;
       default: return colors.primaryLight;
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'To Do': return '⏳';
+      case 'Pending': return '⏳';
       case 'In Progress': return '🔄';
-      case 'Done': return '✅';
+      case 'Solved': return '✅';
       default: return '📋';
     }
   };
 
-  // Filter complaints based on selected status
   const filteredComplaints = selectedStatus === 'All'
     ? complaints
     : complaints.filter(c => c.status === selectedStatus);
@@ -58,8 +53,6 @@ export default function ComplaintsFeed() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>📰 All Complaints Feed</Text>
-
-      {/* Filter Buttons */}
       <View style={styles.filterContainer}>
         {STATUS_OPTIONS.map((status) => (
           <TouchableOpacity
@@ -81,8 +74,7 @@ export default function ComplaintsFeed() {
           </TouchableOpacity>
         ))}
       </View>
-      
-      <ScrollView 
+      <ScrollView
         style={styles.feedContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -104,9 +96,7 @@ export default function ComplaintsFeed() {
                   </Text>
                 </View>
               </View>
-              
               <Text style={styles.complaintDescription}>{complaint.description}</Text>
-              
               <View style={styles.cardFooter}>
                 <Text style={styles.createdBy}>👤 {complaint.createdBy}</Text>
                 <Text style={styles.createdAt}>

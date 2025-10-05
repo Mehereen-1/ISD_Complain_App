@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { addComplaint } from '../Ayesha/services/dbService';
 import { colors } from './colors';
@@ -31,7 +31,7 @@ export default function SubmitComplaint() {
       await addComplaint({
         title: complaint.title,
         description: complaint.description,
-        status: 'To Do',
+        status: 'Pending',
         createdBy: complaint.createdBy,
         createdAt: Date.now()
       });

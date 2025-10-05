@@ -1,22 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import {
-    Complaint,
-    deleteComplaint,
-    listenComplaints,
-    updateComplaint,
-    updateComplaintStatus
+  Complaint,
+  deleteUserComplaint,
+  listenUserComplaints,
+  updateComplaint // for editing title/desc
 } from '../Ayesha/services/dbService';
 import { colors } from './colors';
+
+// Replace with actual user UID from auth
+const currentUserUid = 'student-uid';
 
 export default function MyComplaints() {
   const [myComplaints, setMyComplaints] = useState<Complaint[]>([]);
@@ -24,24 +26,17 @@ export default function MyComplaints() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const currentUser = 'Student'; // Replace with actual user name
 
   useEffect(() => {
-    const unsubscribe = listenComplaints((data) => {
-      // Filter complaints by current user and sort by most recent
-      const userComplaints = data
-        .filter(complaint => complaint.createdBy === currentUser)
-        .sort((a, b) => b.createdAt - a.createdAt);
+    const unsubscribe = listenUserComplaints(currentUserUid, (data) => {
+      const userComplaints = data.sort((a, b) => b.createdAt - a.createdAt);
       setMyComplaints(userComplaints);
       setRefreshing(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-  };
+  const onRefresh = () => setRefreshing(true);
 
   const handleDelete = (id: string) => {
     Alert.alert(
@@ -54,7 +49,7 @@ export default function MyComplaints() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteComplaint(id);
+              await deleteUserComplaint(currentUserUid, id);
               Alert.alert('Success', 'Complaint deleted successfully');
             } catch (error) {
               Alert.alert('Error', 'Failed to delete complaint');
@@ -63,14 +58,6 @@ export default function MyComplaints() {
         }
       ]
     );
-  };
-
-  const handleStatusUpdate = async (id: string, newStatus: "To Do" | "In Progress" | "Done") => {
-    try {
-      await updateComplaintStatus(id, newStatus);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update status');
-    }
   };
 
   // --- EDIT FEATURE ---
@@ -107,9 +94,9 @@ export default function MyComplaints() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'To Do': return colors.danger;
+      case 'Pending': return colors.danger;
       case 'In Progress': return colors.warning;
-      case 'Done': return colors.success;
+      case 'Solved': return colors.success;
       default: return colors.background;
     }
   };
@@ -117,9 +104,9 @@ export default function MyComplaints() {
   const getStatusStats = () => {
     const stats = {
       total: myComplaints.length,
-      toDo: myComplaints.filter(c => c.status === 'To Do').length,
+      pending: myComplaints.filter(c => c.status === 'Pending').length,
       inProgress: myComplaints.filter(c => c.status === 'In Progress').length,
-      done: myComplaints.filter(c => c.status === 'Done').length,
+      solved: myComplaints.filter(c => c.status === 'Solved').length,
     };
     return stats;
   };
@@ -129,28 +116,25 @@ export default function MyComplaints() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>📋 My Complaints</Text>
-      
-      {/* Stats Section */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>{stats.total}</Text>
           <Text style={styles.statLabel}>Total</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.dangerLight }]}>
-          <Text style={[styles.statNumber, { color: colors.danger }]}>{stats.toDo}</Text>
-          <Text style={styles.statLabel}>To Do</Text>
+          <Text style={[styles.statNumber, { color: colors.danger }]}>{stats.pending}</Text>
+          <Text style={styles.statLabel}>Pending</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.warningLight }]}>
           <Text style={[styles.statNumber, { color: colors.warning }]}>{stats.inProgress}</Text>
           <Text style={styles.statLabel}>In Progress</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.successLight }]}>
-          <Text style={[styles.statNumber, { color: colors.success }]}>{stats.done}</Text>
-          <Text style={styles.statLabel}>Done</Text>
+          <Text style={[styles.statNumber, { color: colors.success }]}>{stats.solved}</Text>
+          <Text style={styles.statLabel}>Solved</Text>
         </View>
       </View>
-
-      <ScrollView 
+      <ScrollView
         style={styles.complaintsContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -187,13 +171,13 @@ export default function MyComplaints() {
                   <>
                     <Text style={styles.complaintTitle}>{complaint.title}</Text>
                     <View style={{ flexDirection: 'row' }}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.editButton}
                         onPress={() => startEdit(complaint)}
                       >
                         <Text style={styles.editButtonText}>✏️</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.deleteButton}
                         onPress={() => handleDelete(complaint.id!)}
                       >
@@ -203,7 +187,6 @@ export default function MyComplaints() {
                   </>
                 )}
               </View>
-              
               {editingId === complaint.id ? (
                 <TextInput
                   style={[styles.editInput, { height: 80 }]}
@@ -219,7 +202,6 @@ export default function MyComplaints() {
               <Text style={styles.createdAt}>
                 📅 {new Date(complaint.createdAt).toLocaleDateString()}
               </Text>
-              
               {/* Status badge (read-only for students) */}
               <View style={styles.statusSection}>
                 <Text style={styles.statusLabel}>Status:</Text>
