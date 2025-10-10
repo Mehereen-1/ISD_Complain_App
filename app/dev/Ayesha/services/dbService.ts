@@ -2,40 +2,6 @@
 import { get, onValue, push, ref, remove, set, update } from "firebase/database";
 import { db } from "../../../../lib/firebaseConfig";
 
-export const getStudentByComplaintId = async (complaintId: string): Promise<StudentProfile | null> => {
-  try {
-    // Step 1: Get the complaint details
-    const complaintRef = ref(db, `complaints/${complaintId}`);
-    const complaintSnap = await get(complaintRef);
-
-    if (!complaintSnap.exists()) {
-      console.log("Complaint not found");
-      return null;
-    }
-
-    const complaintData = complaintSnap.val();
-    const createdByUid = complaintData.createdBy;
-
-    if (!createdByUid) {
-      console.log("No createdBy field in complaint");
-      return null;
-    }
-
-    // Step 2: Fetch the student from "students" table using uid
-    const studentRef = ref(db, `students/${createdByUid}`);
-    const studentSnap = await get(studentRef);
-
-    if (!studentSnap.exists()) {
-      console.log("Student not found");
-      return null;
-    }
-
-    return { uid: createdByUid, ...studentSnap.val() } as StudentProfile;
-  } catch (error) {
-    console.error("Error fetching student by complaint ID:", error);
-    return null;
-  }
-};
 // services/dbService.ts
 import { Alert } from "react-native";
 
@@ -72,11 +38,6 @@ export const createStudentProfile = async (student: StudentProfile) => {
     ...student,
     createdAt: student.createdAt || Date.now(),
   });
-};
-
-export const editProfile = async (uid: string, updates: Partial<StudentProfile>) => {
-  const studentRef = ref(db, `students/${uid}`);
-  await update(studentRef, updates);
 };
 
 export const editProfile = async (uid: string, updates: Partial<StudentProfile>) => {
