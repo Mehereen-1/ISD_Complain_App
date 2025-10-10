@@ -51,7 +51,21 @@ export const signIn = async (email: string, password: string): Promise<StudentPr
   const snapshot = await get(studentRef);
 
   if (!snapshot.exists()) {
-    throw new Error("No student profile found for this account.");
+    // Create a default profile if it doesn't exist
+    const defaultProfile: StudentProfile = {
+      uid: user.uid,
+      name: '',
+      email: user.email || '',
+      roll: '',
+      department: '',
+      batch: '',
+      hall: '',
+      createdAt: Date.now(),
+    };
+    
+    // Save the default profile
+    await createStudentProfile(defaultProfile);
+    return defaultProfile;
   }
 
   const profile = snapshot.val();

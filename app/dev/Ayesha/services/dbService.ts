@@ -1,7 +1,7 @@
 // services/dbService.ts
 import { get, onValue, push, ref, remove, set, update } from "firebase/database";
 import { Alert } from "react-native";
-import { auth, db } from "../../../../lib/firebaseConfig";
+import { db } from "../../../../lib/firebaseConfig";
 
 // ---------------------- Interfaces ----------------------
 export interface StudentProfile {
@@ -60,11 +60,13 @@ export const addComplaint = async (complaint: Complaint): Promise<string> => {
 export const listenAllComplaints = (callback: (data: Complaint[]) => void) => {
   const complaintsRef = ref(db, "complaints");
   return onValue(complaintsRef, (snapshot) => {
+    console.log('listenAllComplaints: received data update');
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data).map(([id, val]: [string, any]) => ({
       id,
       ...val,
     }));
+    console.log('listenAllComplaints: complaint count =', list.length);
     callback(list);
   });
 };
@@ -73,10 +75,12 @@ export const listenAllComplaints = (callback: (data: Complaint[]) => void) => {
 export const listenUserComplaints = (uid: string, callback: (data: Complaint[]) => void) => {
   const complaintsRef = ref(db, "complaints");
   return onValue(complaintsRef, (snapshot) => {
+    console.log('listenUserComplaints: received data update for uid:', uid);
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
       .filter((complaint) => complaint.createdBy === uid);
+    console.log('listenUserComplaints: user complaint count =', list.length);
     callback(list);
   });
 };
@@ -96,52 +100,58 @@ export const listenComplaintsByCategory = (category: string, callback: (data: Co
 
 // Delete complaint by the student who created it
 export const deleteUserComplaint = async (uid: string, id: string) => {
+  console.log('deleteUserComplaint called with uid:', uid, 'id:', id);
+  
+  if (!id) {
+    console.log('❌ Error: Complaint ID is required');
+    throw new Error("Complaint ID is required");
+  }
+  
   const complaintRef = ref(db, `complaints/${id}`);
+  console.log('📍 Database path:', `complaints/${id}`);
   const snapshot = await get(complaintRef);
+  console.log('📊 Snapshot exists:', snapshot.exists());
+  
   if (snapshot.exists()) {
     const complaint = snapshot.val();
+    console.log('📄 Found complaint data:', complaint);
+    console.log('🔍 Authorization check: complaint.createdBy =', complaint.createdBy, ', uid =', uid);
+    
     if (complaint.createdBy === uid) {
+      console.log('✅ User authorized - proceeding with delete');
       await remove(complaintRef);
+      console.log('🎉 Complaint deleted successfully from Firebase');
       return true;
     } else {
+      console.log('❌ Authorization failed - user can only delete own complaints');
       throw new Error("Unauthorized: You can only delete your own complaints.");
     }
+  } else {
+    console.log('❌ Complaint not found in database');
+    throw new Error("Complaint not found");
   }
-  return false;
+  
 };
 
-export const deleteComplaintByUser = (uid: string, id: string, complaint: Complaint) => {
-  Alert.alert(
-    "Confirm Delete",
-    "Are you sure you want to delete this complaint?",
-    [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            const uid = auth.currentUser?.uid;
-            if (!uid) {
-              Alert.alert("Error", "You must be logged in to delete complaints.");
-              return;
-            }
+export const deleteComplaintByUser = async (uid: string, id: string, complaint: Complaint) => {
+  console.log('🔄 deleteComplaintByUser called with:');
+  console.log('   👤 uid:', uid);
+  console.log('   📝 id:', id);
+  console.log('   📋 complaint title:', complaint.title);
+  
+  if (!uid) {
+    console.log('❌ Error: No user ID provided');
+    throw new Error("You must be logged in to delete complaints.");
+  }
 
-            if (!complaint.id) {
-              Alert.alert("Error", "Complaint ID is missing.");
-              return;
-            }
+  if (!id) {
+    console.log('❌ Error: No complaint ID provided');
+    throw new Error("Complaint ID is missing.");
+  }
 
-            await deleteUserComplaint(uid, complaint.id);
-            Alert.alert("Success", "Complaint deleted successfully!");
-          } catch (err) {
-            console.error(err);
-            Alert.alert("Error", "Could not delete complaint.");
-          }
-        },
-      },
-    ]
-  );
+  console.log('➡️ Calling deleteUserComplaint...');
+  await deleteUserComplaint(uid, id);
+  console.log('✅ deleteComplaintByUser completed successfully');
 };
 
 // Delete complaint by the admin
