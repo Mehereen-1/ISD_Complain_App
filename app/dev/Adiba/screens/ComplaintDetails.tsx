@@ -1,30 +1,102 @@
+import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { get, ref, remove } from "firebase/database";
 import React, { useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { db } from "../../../../lib/firebaseConfig";
+import { getStudentByComplaintId, StudentProfile, updateComplaintStatus } from "../../Ayesha/services/dbService";
 import { colors } from "../constants/colors";
+
+interface Complaint {
+  id?: string;
+  title: string;
+  description: string;
+  category: string;
+  zone: string;
+  imageUrl?: string;
+  status: string;
+  createdBy: string;
+  createdAt: number;
+}
 
 export default function ComplaintDetails() {
   const router = useRouter();
-  const {
-    id,
-    title,
-    category,
-    status: initialStatus,
-    createdAt,
-    timestamp,
-    image,
-    studentName,
-    studentId,
-    studentEmail,
-    studentAvatar
-  } = useLocalSearchParams();
+  const { id } = useLocalSearchParams();
 
-  const [currentStatus, setCurrentStatus] = useState(initialStatus as string);
+  // Complaint data state
+  const [complaint, setComplaint] = useState<Complaint | null>(null);
+  const [complaintLoading, setComplaintLoading] = useState(true);
+  const [complaintError, setComplaintError] = useState("");
+
+  // Student profile state
+  const [student, setStudent] = useState<StudentProfile | null>(null);
+  const [studentLoading, setStudentLoading] = useState(true);
+  const [studentError, setStudentError] = useState("");
+
+  React.useEffect(() => {
+    async function fetchComplaint() {
+      setComplaintLoading(true);
+      setComplaintError("");
+      if (!id) {
+        setComplaintError("No complaint ID");
+        setComplaintLoading(false);
+        return;
+      }
+      try {
+        const complaintRef = ref(db, `complaints/${id}`);
+        const complaintSnap = await get(complaintRef);
+
+        if (!complaintSnap.exists()) {
+          setComplaintError("Complaint not found");
+          setComplaintLoading(false);
+          return;
+        }
+
+        const complaintData = complaintSnap.val();
+        setComplaint({ id: id as string, ...complaintData });
+      } catch (error) {
+        console.error("Error fetching complaint:", error);
+        setComplaintError("Failed to load complaint");
+      }
+      setComplaintLoading(false);
+    }
+
+    async function fetchStudent() {
+      setStudentLoading(true);
+      setStudentError("");
+      if (!id) {
+        setStudentError("No complaint ID");
+        setStudentLoading(false);
+        return;
+      }
+      const profile = await getStudentByComplaintId(id as string);
+      console.log("[ComplaintDetails] getStudentByComplaintId result:", profile);
+      if (profile) {
+        setStudent(profile);
+      } else {
+        setStudentError("No student info found for this complaint. Please check if the complaint has a valid createdBy field and the student exists.");
+      }
+      setStudentLoading(false);
+    }
+
+    fetchComplaint();
+    fetchStudent();
+  }, [id]);
+  const [currentStatus, setCurrentStatus] = useState<string>("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showStudentDetailsModal, setShowStudentDetailsModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState("");
+  const [showStatusPickers, setShowStatusPickers] = useState(false);
+
+  // Update currentStatus when complaint loads
+  React.useEffect(() => {
+    if (complaint?.status) {
+      setCurrentStatus(complaint.status);
+    }
+  }, [complaint?.status]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -66,21 +138,23 @@ export default function ComplaintDetails() {
 
   const confirmStatusChange = () => {
     setCurrentStatus(pendingStatusChange);
-    setHasUnsavedChanges(true);
     setShowStatusModal(false);
+    // Update status in backend
+    if (id && pendingStatusChange) {
+      updateComplaintStatus(id as string, pendingStatusChange as any)
+        .then(() => {
+          // Optionally show a success message
+        })
+        .catch((err) => {
+          // Optionally show an error message
+          console.error(err);
+        });
+    }
   };
 
   const handleSaveChanges = () => {
-    // Save the status update to localStorage so admin dashboard can pick it up
-    const existingUpdates = localStorage.getItem('complaintStatusUpdates');
-    const updates = existingUpdates ? JSON.parse(existingUpdates) : {};
-    updates[id as string] = { status: currentStatus };
-    localStorage.setItem('complaintStatusUpdates', JSON.stringify(updates));
-    
-    setHasUnsavedChanges(false);
-    
-    // Navigate back to dashboard with updated status
-    router.back();
+  // No longer needed, status is updated in backend
+  router.back();
   };
 
   const handleDelete = () => {
@@ -89,37 +163,43 @@ export default function ComplaintDetails() {
 
   const confirmDelete = () => {
     setShowDeleteModal(false);
-    
-    // Save the deleted complaint ID to localStorage so admin dashboard can remove it
-    const existingDeleted = localStorage.getItem('deletedComplaints');
-    const deletedIds = existingDeleted ? JSON.parse(existingDeleted) : [];
-    deletedIds.push(id as string);
-    localStorage.setItem('deletedComplaints', JSON.stringify(deletedIds));
-    
-    // Navigate back to dashboard immediately
-    router.back();
+    // Instantly delete complaint in backend (no modal from dbService)
+    const deleteComplaintInstantly = async (complaintId: string) => {
+      try {
+        const complaintRef = ref(db, `complaints/${complaintId}`);
+        await remove(complaintRef);
+        // Optionally show a success message here
+      } catch (err) {
+        // Optionally show an error message here
+        console.error(err);
+      }
+    };
+    if (id) {
+      deleteComplaintInstantly(id as string).then(() => {
+        router.back();
+      });
+    } else {
+      router.back();
+    }
   };
 
   return (
     <>
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Complaint Details</Text>
-        <Text style={styles.headerSubtitle}>ID: #{id}</Text>
-      </View>
+      {/* Header removed as requested */}
 
       <View style={styles.content}>
-        {/* Student Profile Section */}
-        <View style={styles.studentCard}>
+  {/* Complaint Details Title */}
+  <Text style={styles.headerTitle}>Complaint Details</Text>
+  {/* Student Profile Section - Only Avatar, Name, Roll, and Details Button */}
+  <View style={styles.studentCard}>
           <View style={styles.studentHeader}>
-            <Image source={{ uri: studentAvatar as string }} style={styles.studentAvatar} />
+            {/* Avatar not shown; add here if needed in future */}
             <View style={styles.studentInfo}>
-              <Text style={styles.studentName}>{studentName}</Text>
-              <Text style={styles.studentId}>Roll: {studentId}</Text>
+              <Text style={styles.studentName}>{student?.name || "-"}</Text>
+              <Text style={styles.studentId}>Roll: {student?.roll || "-"}</Text>
             </View>
           </View>
-          
           <View style={styles.studentContactSection}>
             <TouchableOpacity 
               style={[styles.contactButton, styles.detailsButton, styles.fullWidthButton]}
@@ -134,18 +214,17 @@ export default function ComplaintDetails() {
 
         {/* Main Complaint Card */}
         <View style={styles.card}>
-          <Text style={styles.title}>{title}</Text>
-
+          <Text style={styles.title}>{complaint?.title || "Loading..."}</Text>
           {/* Complaint Image */}
-          {image && (
-            <View style={styles.imageContainer}>
-              <Image source={{ uri: image as string }} style={styles.complaintImage} />
-            </View>
+          {complaint?.imageUrl && (
+            <TouchableOpacity style={styles.imageContainer} onPress={() => setShowImageModal(true)} activeOpacity={0.8}>
+              <Image source={{ uri: complaint.imageUrl }} style={styles.complaintImage} />
+            </TouchableOpacity>
           )}
 
           <View style={styles.detailRow}>
             <Text style={styles.label}>Category</Text>
-            <Text style={styles.value}>{category}</Text>
+            <Text style={styles.value}>{complaint?.category || "N/A"}</Text>
           </View>
 
           <View style={styles.detailRow}>
@@ -159,51 +238,51 @@ export default function ComplaintDetails() {
 
           <View style={styles.detailRow}>
             <Text style={styles.label}>Created</Text>
-            <Text style={styles.value}>{createdAt}</Text>
+            <Text style={styles.value}>{complaint?.createdAt ? new Date(complaint.createdAt).toLocaleDateString() : "N/A"}</Text>
           </View>
 
           <View style={styles.detailRow}>
             <Text style={styles.label}>Place</Text>
-            <Text style={styles.value}>Room 204, Building A</Text>
+            <Text style={styles.value}>{complaint?.zone || "Room 204, Building A"}</Text>
           </View>
 
           <View style={styles.detailRow}>
             <Text style={styles.label}>Description</Text>
             <Text style={styles.description}>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+              {complaint?.description || "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."}
             </Text>
           </View>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={[styles.primaryButton]} 
-              onPress={handleStatusChange}
-              activeOpacity={0.7}
-              disabled={currentStatus === "Resolved"}
+            <TouchableOpacity
+              style={styles.makeAsButton}
+              onPress={() => setShowStatusPickers(!showStatusPickers)}
+              activeOpacity={0.8}
             >
-              <Text style={styles.buttonText}>
-                {currentStatus === "Resolved" ? "Already Resolved" : `Mark as ${getNextStatus(currentStatus)}`}
-              </Text>
+              <Text style={styles.makeAsButtonText}>Make as</Text>
             </TouchableOpacity>
 
-            {hasUnsavedChanges && (
-              <TouchableOpacity 
-                style={[styles.saveButton]}
-                onPress={handleSaveChanges}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.saveButtonText}>💾 Save Changes</Text>
-              </TouchableOpacity>
+            {showStatusPickers && (
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={currentStatus}
+                  style={styles.picker}
+                  onValueChange={(itemValue) => {
+                    if (itemValue !== currentStatus) {
+                      setPendingStatusChange(itemValue);
+                      setShowStatusModal(true);
+                      setShowStatusPickers(false);
+                    }
+                  }}
+                >
+                  <Picker.Item label="Pending" value="Pending" />
+                  <Picker.Item label="In Progress" value="In Progress" />
+                  <Picker.Item label="Resolved" value="Resolved" />
+                </Picker>
+              </View>
             )}
           </View>
 
-          <TouchableOpacity 
-            style={[styles.secondaryButton, {marginBottom: 16}]}
-            activeOpacity={0.7}
-            onPress={() => {/* Add Comment functionality - to be implemented */}}
-          >
-            <Text style={styles.secondaryButtonText}>Add Comment</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity 
             style={[styles.deleteButton, {alignSelf: 'center'}]} 
@@ -215,6 +294,31 @@ export default function ComplaintDetails() {
         </View>
       </View>
     </ScrollView>
+
+    {/* Image Zoom Modal */}
+    {showImageModal && complaint?.imageUrl && (
+      <View style={styles.imageModalOverlay}>
+        <TouchableOpacity 
+          style={styles.imageModalBackdrop}
+          onPress={() => setShowImageModal(false)}
+          activeOpacity={1}
+        />
+        <View style={styles.imageModalContainer}>
+          <TouchableOpacity 
+            style={styles.closeImageButton}
+            onPress={() => setShowImageModal(false)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.closeImageButtonText}>×</Text>
+          </TouchableOpacity>
+          <Image 
+            source={{ uri: complaint.imageUrl }} 
+            style={styles.zoomedImage}
+            resizeMode="contain"
+          />
+        </View>
+      </View>
+    )}
 
     {/* Status Change Confirmation Modal */}
     {showStatusModal && (
@@ -312,70 +416,46 @@ export default function ComplaintDetails() {
           
           <ScrollView style={styles.studentDetailsContent} showsVerticalScrollIndicator={false}>
             <View style={styles.studentProfileSection}>
-              <Image source={{ uri: studentAvatar as string }} style={styles.studentDetailsAvatar} />
-              <Text style={styles.studentDetailsName}>{studentName}</Text>
-              <Text style={styles.studentDetailsRoll}>Roll: {studentId}</Text>
+              {/* Avatar not shown; add here if needed in future */}
+              <Text style={styles.studentDetailsName}>{student?.name || "-"}</Text>
+              <Text style={styles.studentDetailsRoll}>Roll: {student?.roll || "-"}</Text>
             </View>
 
             <View style={styles.studentInfoGrid}>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>📧 Email</Text>
-                <Text style={styles.infoValue}>{studentEmail}</Text>
+                <Text style={styles.infoValue}>{student?.email || "-"}</Text>
               </View>
-              
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>📞 Phone</Text>
-                <Text style={styles.infoValue}>+880 1712-345678</Text>
-              </View>
-              
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>🎓 Department</Text>
-                <Text style={styles.infoValue}>Computer Science & Engineering</Text>
+                <Text style={styles.infoValue}>{student?.department || "-"}</Text>
               </View>
-              
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>📅 Batch</Text>
-                <Text style={styles.infoValue}>2021-2025</Text>
+                <Text style={styles.infoValue}>{student?.batch || "-"}</Text>
               </View>
-              
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>🏠 Hall</Text>
-                <Text style={styles.infoValue}>Shaheed Rafiq Hall</Text>
-              </View>
-              
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>📍 Current Address</Text>
-                <Text style={styles.infoValue}>Room 204, Building A, University Campus</Text>
-              </View>
-              
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>📊 Year</Text>
-                <Text style={styles.infoValue}>4th Year (Final)</Text>
-              </View>
-              
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>🆔 Student ID</Text>
-                <Text style={styles.infoValue}>{studentId}</Text>
+                <Text style={styles.infoValue}>{student?.hall || "-"}</Text>
               </View>
             </View>
 
             <View style={styles.quickActions}>
               <TouchableOpacity 
                 style={styles.quickActionButton}
-                onPress={() => {/* Handle email */}}
+                onPress={() => {
+                  if (student?.email) {
+                    const subject = encodeURIComponent("Regarding your complaint");
+                    const body = encodeURIComponent("Hello,\n\nI am contacting you regarding your complaint submitted to the ISD system.\n\nBest regards,\nAdmin");
+                    const mailtoUrl = `mailto:${student.email}?subject=${subject}&body=${body}`;
+                    Linking.openURL(mailtoUrl);
+                  }
+                }}
                 activeOpacity={0.8}
+                disabled={!student?.email}
               >
                 <Text style={styles.quickActionIcon}>✉️</Text>
                 <Text style={styles.quickActionText}>Send Email</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.quickActionButton}
-                onPress={() => {/* Handle call */}}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.quickActionIcon}>📞</Text>
-                <Text style={styles.quickActionText}>Call Student</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -387,6 +467,47 @@ export default function ComplaintDetails() {
 }
 
 const styles = StyleSheet.create({
+  makeAsButton: {
+    backgroundColor: colors.roseTaupe,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    alignItems: 'center',
+    shadowColor: colors.roseTaupe,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    minHeight: 48,
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  makeAsButtonText: {
+    color: colors.white,
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  pickerContainer: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.roseTaupe,
+    shadowColor: colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  picker: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    width: '100%',
+    height: 48,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.platinum2,
@@ -887,5 +1008,51 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.white,
     textAlign: 'center',
+  },
+  // Image Modal Styles
+  imageModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    zIndex: 2000,
+  },
+  imageModalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  imageModalContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeImageButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2001,
+  },
+  closeImageButtonText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.white,
+  },
+  zoomedImage: {
+    width: '100%',
+    height: '100%',
   },
 });

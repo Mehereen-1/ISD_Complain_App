@@ -1,5 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../constants/colors";
 import ComplaintsTab from "./ComplaintsTab";
@@ -13,33 +14,35 @@ import ProfileTab from "./ProfileTab";
 export default function AdminDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("complaints");
-  const [notifications, setNotifications] = useState([
-    {
-      id: "1",
-      title: "New Complaint Received",
-      message: "A new maintenance request has been submitted",
-      time: "5 minutes ago",
-      isRead: false,
-      type: "new"
-    },
-    {
-      id: "2", 
-      title: "Complaint Resolved",
-      message: "Wi-Fi issue in Building A has been resolved",
-      time: "2 hours ago",
-      isRead: false,
-      type: "resolved"
-    },
-    {
-      id: "3",
-      title: "Status Updated", 
-      message: "Leaky tap complaint is now in progress",
-      time: "1 day ago",
-      isRead: false,
-      type: "updated"
-    }
-  ]);
+  // Remove local notifications state, will use NotificationsTab unread count
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
+
+  // Load activeTab from storage on mount
+  useEffect(() => {
+    const loadActiveTab = async () => {
+      try {
+        const savedTab = await AsyncStorage.getItem('activeTab');
+        if (savedTab) {
+          setActiveTab(savedTab);
+        }
+      } catch (error) {
+        console.error('Error loading active tab:', error);
+      }
+    };
+    loadActiveTab();
+  }, []);
+
+  // Save activeTab to storage when it changes
+  useEffect(() => {
+    const saveActiveTab = async () => {
+      try {
+        await AsyncStorage.setItem('activeTab', activeTab);
+      } catch (error) {
+        console.error('Error saving active tab:', error);
+      }
+    };
+    saveActiveTab();
+  }, [activeTab]);
 
   const navItems = [
     { name: "complaints", icon: "📋", label: "Complaints" },
@@ -52,7 +55,7 @@ export default function AdminDashboard() {
       case "complaints":
         return <ComplaintsTab />;
       case "notifications":
-        return <NotificationsTab />;
+          return <NotificationsTab setUnreadCount={setUnreadCount} />;
       case "profile":
         return <ProfileTab />;
       default:
@@ -60,7 +63,9 @@ export default function AdminDashboard() {
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  // Use a state to sync unread notification count from NotificationsTab
+  const [unreadCount, setUnreadCount] = useState(0);
+  // Always show unread badge, even before clicking tab
 
   const handleNotificationPress = () => {
     if (activeTab === "notifications") {
@@ -70,16 +75,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    setShowNotificationDropdown(false);
-  };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => 
-      n.id === id ? { ...n, isRead: true } : n
-    ));
-  };
+  // Remove unused markAllAsRead and markAsRead logic
 
 
 

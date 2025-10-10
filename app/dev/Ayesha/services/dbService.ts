@@ -1,7 +1,44 @@
-// services/dbService.ts
+// Fetch student profile by complaint ID
 import { get, onValue, push, ref, remove, set, update } from "firebase/database";
+import { db } from "../../../../lib/firebaseConfig";
+
+export const getStudentByComplaintId = async (complaintId: string): Promise<StudentProfile | null> => {
+  try {
+    // Step 1: Get the complaint details
+    const complaintRef = ref(db, `complaints/${complaintId}`);
+    const complaintSnap = await get(complaintRef);
+
+    if (!complaintSnap.exists()) {
+      console.log("Complaint not found");
+      return null;
+    }
+
+    const complaintData = complaintSnap.val();
+    const createdByUid = complaintData.createdBy;
+
+    if (!createdByUid) {
+      console.log("No createdBy field in complaint");
+      return null;
+    }
+
+    // Step 2: Fetch the student from "students" table using uid
+    const studentRef = ref(db, `students/${createdByUid}`);
+    const studentSnap = await get(studentRef);
+
+    if (!studentSnap.exists()) {
+      console.log("Student not found");
+      return null;
+    }
+
+    return { uid: createdByUid, ...studentSnap.val() } as StudentProfile;
+  } catch (error) {
+    console.error("Error fetching student by complaint ID:", error);
+    return null;
+  }
+};
+// services/dbService.ts
 import { Alert } from "react-native";
-import { auth, db } from "../../../../lib/firebaseConfig";
+import { auth } from "../../../../lib/firebaseConfig";
 
 // ---------------------- Interfaces ----------------------
 export interface StudentProfile {
@@ -15,7 +52,7 @@ export interface StudentProfile {
   createdAt: number;
 }
 
-export type ComplaintStatus = "Pending" | "In Progress" | "Solved";
+export type ComplaintStatus = "Pending" | "In Progress" | "Resolved";
 
 export interface Complaint {
   id?: string;
@@ -48,23 +85,38 @@ export const editProfile = async (uid: string, updates: Partial<StudentProfile>)
 // Add a new complaint
 export const addComplaint = async (complaint: Complaint): Promise<string> => {
   const complaintRef = push(ref(db, "complaints"));
+  const createdAt = Date.now();
   await set(complaintRef, {
     ...complaint,
     status: "Pending",
-    createdAt: Date.now(),
+    createdAt,
   });
+  // Add admin notification for new complaint
+  try {
+    const { addAdminNotification } = await import("../../Adiba/services/adminNotificationService");
+    await addAdminNotification({
+      type: "new",
+      title: "New Complaint Received",
+      message: `Complaint: ${complaint.title} (ID: ${complaintRef.key!})`,
+      time: createdAt,
+      read: false,
+      complaintId: complaintRef.key!,
+    });
+  } catch (e) {
+    // fail silently if notification service not available
+  }
   return complaintRef.key!;
 };
 
 // Display all complaints (admin use)
 export const listenAllComplaints = (callback: (data: Complaint[]) => void) => {
   const complaintsRef = ref(db, "complaints");
-  return onValue(complaintsRef, (snapshot) => {
+  return onValue(complaintsRef, (snapshot: import("firebase/database").DataSnapshot) => {
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data).map(([id, val]: [string, any]) => ({
       id,
       ...val,
-    }));
+    })).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // Sort by createdAt descending (newest first)
     callback(list);
   });
 };
@@ -76,7 +128,8 @@ export const listenUserComplaints = (uid: string, callback: (data: Complaint[]) 
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((complaint) => complaint.createdBy === uid);
+      .filter((complaint) => complaint.createdBy === uid)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // Sort by createdAt descending (newest first)
     callback(list);
   });
 };
@@ -88,8 +141,9 @@ export const listenComplaintsByCategory = (category: string, callback: (data: Co
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((complaint) => complaint.category === category);
-    callback(list);
+      .filter((complaint) => complaint.category === category)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // Sort by createdAt descending (newest first)
+(list);
   });
 };
 
