@@ -1,77 +1,41 @@
+import * as authService from "@/app/dev/Ayesha/services/authService";
+import { router } from 'expo-router';
 import React, { useState } from "react";
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../constants/colors";
 
-interface ProfileSettings {
-  emailNotifications: boolean;
-  pushNotifications: boolean;
-  darkMode: boolean;
-  autoAssign: boolean;
-}
-
 export default function ProfileTab() {
-  const [profileSettings, setProfileSettings] = useState<ProfileSettings>({
-    emailNotifications: true,
-    pushNotifications: true,
-    darkMode: false,
-    autoAssign: false,
-  });
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [tempSettings, setTempSettings] = useState(profileSettings);
+  const adminEmail = "admin@university.edu";
+  const adminPass = "admin101";
 
   const adminInfo = {
     name: "Admin User",
-    email: "admin@university.edu",
+    email: adminEmail,
     role: "System Administrator",
     department: "IT Support",
     joinDate: "January 2023",
-    totalResolved: 247,
-    averageTime: "2.5 hours",
-    rating: 4.8,
   };
 
-  const handleSettingChange = (key: keyof ProfileSettings, value: boolean) => {
-    setTempSettings(prev => ({ ...prev, [key]: value }));
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+
+
+  const handleLogout = () => {
+    setShowLogoutModal(true);
   };
 
-  const saveSettings = () => {
-    setProfileSettings(tempSettings);
-    setIsEditing(false);
-  };
-
-  const cancelEditing = () => {
-    setTempSettings(profileSettings);
-    setIsEditing(false);
-  };
-
-  const SettingRow = ({ 
-    title, 
-    subtitle, 
-    value, 
-    onValueChange 
-  }: {
-    title: string;
-    subtitle: string;
-    value: boolean;
-    onValueChange: (value: boolean) => void;
-  }) => (
-    <View style={styles.settingRow}>
-      <View style={styles.settingInfo}>
-        <Text style={styles.settingTitle}>{title}</Text>
-        <Text style={styles.settingSubtitle}>{subtitle}</Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: '#E3E0E0', true: colors.roseTaupe }}
-        thumbColor={value ? colors.white : '#f4f3f4'}
-        disabled={!isEditing}
-      />
-    </View>
-  );
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
+    try {
+      await authService.logout();
+      router.push('/dev/Ayesha/auth/signIn');
+    } catch (error) {
+      Alert.alert("Error", "Failed to logout. Please try again.");
+    }
+  }
 
   return (
+    <>
     <View style={styles.container}>
       {/* Profile Header */}
       <View style={styles.profileHeader}>
@@ -87,117 +51,56 @@ export default function ProfileTab() {
         </View>
       </View>
 
-      {/* Stats Section */}
-      <View style={styles.statsContainer}>
-        <Text style={styles.sectionTitle}>Performance Overview</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{adminInfo.totalResolved}</Text>
-            <Text style={styles.statLabel}>Resolved</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{adminInfo.averageTime}</Text>
-            <Text style={styles.statLabel}>Avg Time</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{adminInfo.rating}</Text>
-            <Text style={styles.statLabel}>Rating</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Settings Section */}
-      <View style={styles.settingsContainer}>
-        <View style={styles.settingsHeader}>
-          <Text style={styles.sectionTitle}>Settings</Text>
-          <TouchableOpacity
-            style={[
-              styles.editButton,
-              isEditing && styles.editButtonActive
-            ]}
-            onPress={() => isEditing ? saveSettings() : setIsEditing(true)}
-          >
-            <Text style={[
-              styles.editButtonText,
-              isEditing && styles.editButtonTextActive
-            ]}>
-              {isEditing ? 'Save' : 'Edit'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.settingsCard}>
-          <SettingRow
-            title="Email Notifications"
-            subtitle="Receive complaint updates via email"
-            value={tempSettings.emailNotifications}
-            onValueChange={(value) => handleSettingChange('emailNotifications', value)}
-          />
-          
-          <SettingRow
-            title="Push Notifications"
-            subtitle="Get instant notifications on your device"
-            value={tempSettings.pushNotifications}
-            onValueChange={(value) => handleSettingChange('pushNotifications', value)}
-          />
-          
-          <SettingRow
-            title="Dark Mode"
-            subtitle="Switch to dark theme interface"
-            value={tempSettings.darkMode}
-            onValueChange={(value) => handleSettingChange('darkMode', value)}
-          />
-          
-          <SettingRow
-            title="Auto Assignment"
-            subtitle="Automatically assign new complaints"
-            value={tempSettings.autoAssign}
-            onValueChange={(value) => handleSettingChange('autoAssign', value)}
-          />
-        </View>
-
-        {isEditing && (
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={cancelEditing}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {/* Quick Actions */}
+      {/* Account Actions */}
       <View style={styles.actionsContainer}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <Text style={styles.sectionTitle}>Account</Text>
         <View style={styles.actionsList}>
-          <TouchableOpacity style={styles.actionItem}>
-            <Text style={styles.actionIcon}>📊</Text>
-            <Text style={styles.actionText}>View Reports</Text>
-            <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionItem}>
-            <Text style={styles.actionIcon}>📱</Text>
-            <Text style={styles.actionText}>Contact Support</Text>
-            <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionItem}>
-            <Text style={styles.actionIcon}>🔄</Text>
-            <Text style={styles.actionText}>Backup Data</Text>
-            <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity style={[styles.actionItem, {borderBottomWidth: 0}]} onPress={handleLogout}>
             <Text style={styles.actionIcon}>🚪</Text>
-            <Text style={styles.actionText}>Sign Out</Text>
+            <Text style={styles.actionText}>Logout</Text>
             <Text style={styles.actionArrow}>›</Text>
           </TouchableOpacity>
         </View>
       </View>
     </View>
+
+    {/* Logout Confirmation Modal */}
+    {showLogoutModal && (
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity 
+          style={styles.modalBackdrop}
+          onPress={() => setShowLogoutModal(false)}
+          activeOpacity={1}
+        />
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>🚪 Logout</Text>
+          </View>
+          <View style={styles.modalBody}>
+            <Text style={styles.modalText}>
+              Are you sure you want to logout?
+            </Text>
+          </View>
+          <View style={styles.modalButtons}>
+            <TouchableOpacity 
+              style={styles.modalCancelButton}
+              onPress={() => setShowLogoutModal(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.modalLogoutButton}
+              onPress={confirmLogout}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalLogoutText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    )}
+    </>
   );
 }
 
@@ -253,7 +156,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontWeight: '500',
   },
-  statsContainer: {
+  actionsContainer: {
     marginBottom: 24,
   },
   sectionTitle: {
@@ -261,108 +164,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 12,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: colors.white,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginHorizontal: 4,
-    shadowColor: colors.cardShadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.roseTaupe,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  settingsContainer: {
-    marginBottom: 24,
-  },
-  settingsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  editButton: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  editButtonActive: {
-    backgroundColor: colors.roseTaupe,
-  },
-  editButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  editButtonTextActive: {
-    color: colors.white,
-  },
-  settingsCard: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: colors.cardShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  settingInfo: {
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
-  settingSubtitle: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  actionButtons: {
-    marginTop: 12,
-  },
-  cancelButton: {
-    backgroundColor: '#f5f5f5',
-    padding: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  actionsContainer: {
-    marginBottom: 24,
   },
   actionsList: {
     backgroundColor: colors.white,
@@ -396,4 +197,86 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontWeight: '300',
   },
+  // Modal Styles
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    zIndex: 1000,
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 400,
+    overflow: 'hidden',
+    shadowColor: colors.cardShadow,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    backgroundColor: colors.rosyBrown,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.white,
+    textAlign: 'center',
+  },
+  modalBody: {
+    padding: 24,
+  },
+  modalText: {
+    fontSize: 16,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: colors.platinum,
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: colors.platinum,
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  modalLogoutButton: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+    backgroundColor: colors.roseTaupe,
+  },
+  modalLogoutText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.white,
+  },
+// ...existing code...
 });
