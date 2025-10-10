@@ -12,7 +12,7 @@ import {
 import { auth } from '../../../lib/firebaseConfig.js';
 import {
   Complaint,
-  deleteUserComplaint,
+  deleteComplaintByUser,
   listenUserComplaints,
   updateComplaint
 } from '../Ayesha/services/dbService';
@@ -36,7 +36,9 @@ export default function MyComplaints() {
 
   useEffect(() => {
     if (!currentUserUid) return; // Don't listen if not logged in
+    console.log('Setting up listener for user:', currentUserUid);
     const unsubscribe = listenUserComplaints(currentUserUid, (data) => {
+      console.log('MyComplaints: received updated data, count =', data.length);
       const userComplaints = data.sort((a, b) => b.createdAt - a.createdAt);
       setMyComplaints(userComplaints);
       setRefreshing(false);
@@ -46,28 +48,46 @@ export default function MyComplaints() {
 
   const onRefresh = () => setRefreshing(true);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (complaint: Complaint) => {
     if (!currentUserUid) {
       Alert.alert('Error', 'You must be logged in to delete complaints.');
       return;
     }
+    
+    if (!complaint.id) {
+      Alert.alert('Error', 'Invalid complaint ID.');
+      return;
+    }
+    
     Alert.alert(
-      'Delete Complaint',
+      'Delete Complaint', 
       'Are you sure you want to delete this complaint?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
         {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteUserComplaint(currentUserUid, id);
-              Alert.alert('Success', 'Complaint deleted successfully');
+              console.log('🚀 MyComplaints: Starting delete process');
+              console.log('👤 Current user:', currentUserUid);
+              console.log('📝 Complaint ID:', complaint.id);
+              console.log('📋 Complaint title:', complaint.title);
+              console.log('🏗️ Complaint createdBy:', complaint.createdBy);
+              
+              await deleteComplaintByUser(currentUserUid, complaint.id!, complaint);
+              
+              console.log('✅ MyComplaints: Delete completed successfully');
+              Alert.alert('Success', 'Complaint deleted successfully.');
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete complaint');
+              console.error('❌ MyComplaints: Delete error:', error);
+              Alert.alert('Error', `Failed to delete: ${(error as Error).message}`);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -201,7 +221,7 @@ export default function MyComplaints() {
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.deleteButton}
-                        onPress={() => handleDelete(complaint.id!)}
+                        onPress={() => handleDelete(complaint)}
                       >
                         <Text style={styles.deleteButtonText}>🗑️</Text>
                       </TouchableOpacity>
