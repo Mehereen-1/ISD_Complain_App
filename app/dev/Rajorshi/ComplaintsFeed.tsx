@@ -1,3 +1,4 @@
+import { get, ref } from "firebase/database";
 import React, { useEffect, useState } from 'react';
 import {
   RefreshControl,
@@ -7,7 +8,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { Complaint, listenAllComplaints } from '../Ayesha/services/dbService';
+import { db } from '../../../lib/firebaseConfig.js'; // Adjust if needed
+import { Complaint, listenAllComplaints, StudentProfile } from '../Ayesha/services/dbService';
 import { colors } from './colors';
 
 const STATUS_OPTIONS = ['All', 'Pending', 'In Progress', 'Solved'];
@@ -16,6 +18,7 @@ export default function ComplaintsFeed() {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('All');
+  const [studentProfiles, setStudentProfiles] = useState<{ [uid: string]: StudentProfile }>({});
 
   useEffect(() => {
     const unsubscribe = listenAllComplaints((data) => {
@@ -24,6 +27,17 @@ export default function ComplaintsFeed() {
       setRefreshing(false);
     });
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    // Fetch all student profiles once
+    const fetchProfiles = async () => {
+      const snapshot = await get(ref(db, "students"));
+      if (snapshot.exists()) {
+        setStudentProfiles(snapshot.val());
+      }
+    };
+    fetchProfiles();
   }, []);
 
   const onRefresh = () => setRefreshing(true);
@@ -86,25 +100,40 @@ export default function ComplaintsFeed() {
             <Text style={styles.emptySubText}>Be the first to submit one!</Text>
           </View>
         ) : (
-          filteredComplaints.map((complaint) => (
-            <View key={complaint.id} style={styles.complaintCard}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.complaintTitle}>{complaint.title}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(complaint.status) }]}>
-                  <Text style={styles.statusText}>
-                    {getStatusIcon(complaint.status)} {complaint.status}
+          filteredComplaints.map((complaint) => {
+            const student = studentProfiles[complaint.createdBy];
+            return (
+              <View key={complaint.id} style={styles.complaintCard}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.complaintTitle}>{complaint.title}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(complaint.status) }]}>
+                    <Text style={styles.statusText}>
+                      {getStatusIcon(complaint.status)} {complaint.status}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.complaintDescription}>{complaint.description}</Text>
+                <View style={styles.cardFooter}>
+                  <View>
+                    <Text style={styles.createdBy}>
+                      👤 {student ? student.name : complaint.createdBy}
+                    </Text>
+                    {student && (
+                      <>
+                        <Text style={styles.studentInfo}>Roll: {student.roll}</Text>
+                        <Text style={styles.studentInfo}>Dept: {student.department}</Text>
+                        <Text style={styles.studentInfo}>Batch: {student.batch}</Text>
+                        <Text style={styles.studentInfo}>Hall: {student.hall}</Text>
+                      </>
+                    )}
+                  </View>
+                  <Text style={styles.createdAt}>
+                    📅 {new Date(complaint.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
               </View>
-              <Text style={styles.complaintDescription}>{complaint.description}</Text>
-              <View style={styles.cardFooter}>
-                <Text style={styles.createdBy}>👤 {complaint.createdBy}</Text>
-                <Text style={styles.createdAt}>
-                  📅 {new Date(complaint.createdAt).toLocaleDateString()}
-                </Text>
-              </View>
-            </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
     </View>
@@ -218,6 +247,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   createdAt: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  studentInfo: {
     fontSize: 12,
     color: colors.textSecondary,
   },

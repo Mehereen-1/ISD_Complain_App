@@ -23,7 +23,8 @@ export default function Page2() {
   const buttonAnimations = useRef([
     new Animated.Value(0),
     new Animated.Value(0),
-    new Animated.Value(0)
+    new Animated.Value(0),
+    new Animated.Value(0) // Add one for the User Profile button
   ]).current;
 
   useEffect(() => {
@@ -71,6 +72,10 @@ export default function Page2() {
 
   const navigateToMyComplaints = () => {
     router.push('/dev/Rajorshi/MyComplaints');
+  };
+
+  const navigateToUserProfile = () => {
+    router.push('/dev/Rajorshi/UserProfile');
   };
 
   return (
@@ -156,6 +161,14 @@ export default function Page2() {
               color: colors.warning,
               onPress: navigateToMyComplaints,
               index: 2
+            },
+            { 
+              icon: '👤', 
+              title: 'User Profile', 
+              subtitle: 'Edit your info',
+              color: colors.primaryLight, 
+              onPress: navigateToUserProfile,
+              index: 3
             }
           ].map((button, buttonIndex) => (
             <Animated.View

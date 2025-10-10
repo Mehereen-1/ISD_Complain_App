@@ -26,8 +26,8 @@ export const colors = {
   shadow: 'rgba(0, 0, 0, .15)', // Subtle black shadows
   
   // Status Colors
-  success: '#27AE60', // Green for success
-  successLight: '#E9F7EF', // Very light green for success
+  success: '#28a745', // a nice green
+  successLight: '#d4edda', // optional, for light green backgrounds
   warning: '#F39C12', // Orange for warnings
   warningLight: '#FEF5E7', // Very light orange for warnings
   error: '#E74C3C', // Red for errors

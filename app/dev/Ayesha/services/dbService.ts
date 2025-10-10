@@ -38,6 +38,11 @@ export const createStudentProfile = async (student: StudentProfile) => {
   });
 };
 
+export const editProfile = async (uid: string, updates: Partial<StudentProfile>) => {
+  const studentRef = ref(db, `students/${uid}`);
+  await update(studentRef, updates);
+};
+
 // ---------------------- Complaints ----------------------
 
 // Add a new complaint
@@ -167,4 +172,12 @@ export const deleteComplaintByAdmin = (id: string) => {
 // Update complaint status (admin only)
 export const updateComplaintStatus = async (id: string, status: ComplaintStatus) => {
   await update(ref(db, `complaints/${id}`), { status });
+};
+//User Update Complaint
+export const updateComplaint = async (id: string, updatedData: Partial<Complaint>) => {
+  const complaintRef = ref(db, `complaints/${id}`);
+  await update(complaintRef, {
+    ...updatedData,
+    updatedAt: Date.now(), // optional field to track updates
+  });
 };
