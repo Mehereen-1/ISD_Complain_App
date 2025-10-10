@@ -6,7 +6,7 @@ interface ComplaintCardProps {
   title: string;
   status: string;
   category: string;
-  createdAt: string;
+  createdAt: number | string;
   onPress: () => void;
 }
 
@@ -29,6 +29,21 @@ const ComplaintCard: React.FC<ComplaintCardProps> = ({ title, status, category, 
     }
   };
 
+  // Format createdAt for display
+  let createdAtDisplay = "";
+  if (typeof createdAt === "number") {
+    const date = new Date(createdAt);
+    createdAtDisplay = date.toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  } else if (typeof createdAt === "string") {
+    createdAtDisplay = createdAt;
+  }
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.cardContent}>
@@ -47,7 +62,7 @@ const ComplaintCard: React.FC<ComplaintCardProps> = ({ title, status, category, 
             </Text>
           </View>
           <Text style={styles.detailsText}>DETAILS</Text>
-          <Text style={styles.timeText}>{createdAt.toUpperCase()}</Text>
+          <Text style={styles.timeText}>{createdAtDisplay}</Text>
         </View>
       </View>
     </TouchableOpacity>

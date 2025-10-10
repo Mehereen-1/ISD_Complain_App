@@ -24,7 +24,7 @@ export default function SignUp() {
     try {
       await signUp(email, password, name, roll, department, batch, hall);
       Alert.alert("Success", "Account created successfully!");
-      router.replace("/dev/Ayesha/homepage");
+      router.replace("/dev/Rajorshi/Page2"); // Redirect to main Rajorshi page
     } catch (err: any) {
       Alert.alert("Error", err.message);
     }
