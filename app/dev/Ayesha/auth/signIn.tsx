@@ -1,9 +1,10 @@
 // app/auth/signIn.tsx
 import { useRouter } from "expo-router";
 import { onAuthStateChanged, User } from "firebase/auth";
+import { get, ref } from "firebase/database";
 import React, { useEffect, useState } from "react";
 import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
-import { auth } from "../../../../lib/firebaseConfig"; // your initialized firebase
+import { auth, db } from "../../../../lib/firebaseConfig"; // your initialized firebase
 import { colors } from "../../Adiba/constants/colors";
 import { signIn } from "../services/authService"; // adjust if services folder path changed
 
@@ -90,27 +91,36 @@ export default function SignIn() {
   }, []);
 
   const handleSignIn = async () => {
-    try {
-      await signIn(email, password);
-      router.replace("/dev/Ayesha/complaint/list");
-    } catch (err: any) {
-      Alert.alert("Error", err.message);
+  try {
+    // Sign in the user with Firebase Auth
+    await signIn(email, password);
+
+    // Get the current user
+    const user = auth.currentUser;
+    if (!user) throw new Error("No user found");
+
+    // Check if the user exists in the 'admins' table
+    const adminRef = ref(db, "admins");
+    const snapshot = await get(adminRef);
+
+    let isAdmin = false;
+    snapshot.forEach((child) => {
+      const admin = child.val();
+      if (admin.email === user.email) {
+        isAdmin = true;
+      }
+    });
+
+    // Navigate based on role
+    if (isAdmin) {
+      router.replace("/dev/Adiba/screens/AdminDashboard");
+    } else {
+      router.replace("/dev/Rajorshi/Page2");
     }
-  };
-
-  if (currentUser) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>You are already logged in as:</Text>
-        <Text style={styles.email}>{currentUser.email}</Text>
-        <Button
-          title="Go to Complaints"
-          onPress={() => router.replace("/dev/Ayesha/complaint/list")}
-        />
-      </View>
-    );
+  } catch (err: any) {
+    Alert.alert("Error", err.message);
   }
-
+};
   return (
     <View style={styles.container}>
       <View style={styles.header}>

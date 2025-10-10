@@ -45,6 +45,7 @@ export default function Home() {
       <Button title="Complaints by Category" onPress={() => router.push("/dev/Ayesha/complaint/complainCategory")} />
       <Button title="Complaints by Status" onPress={() => router.push("/dev/Ayesha/complaint/complainStatus")} />
       <Button title="Update by Student" onPress={() => router.push("/dev/Ayesha/complaint/updateByStudent")} />
+      <Button title="Admin Registration" onPress={() => router.push("/dev/Ayesha/auth/adminRegister")} />
       <Button title="Logout" onPress={handleLogout} />
     </View>
   );
