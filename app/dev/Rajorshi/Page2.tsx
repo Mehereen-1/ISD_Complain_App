@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   Easing,
@@ -11,6 +12,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { logout } from '../Ayesha/services/authService';
 import { colors } from './colors';
 
 const { width, height } = Dimensions.get('window');
@@ -23,7 +25,8 @@ export default function Page2() {
   const buttonAnimations = useRef([
     new Animated.Value(0),
     new Animated.Value(0),
-    new Animated.Value(0)
+    new Animated.Value(0),
+    new Animated.Value(0) // Add one for the User Profile button
   ]).current;
 
   useEffect(() => {
@@ -73,6 +76,33 @@ export default function Page2() {
     router.push('/dev/Rajorshi/MyComplaints');
   };
 
+  const navigateToUserProfile = () => {
+    router.push('/dev/Rajorshi/UserProfile');
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await logout();
+              Alert.alert("Success", "Logged out successfully");
+              router.replace('/dev/Ayesha/homepage');
+            } catch (err: any) {
+              Alert.alert("Error", err.message);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.primaryLight} />
@@ -96,6 +126,12 @@ export default function Page2() {
           >
             Student Complaint Management System
           </Animated.Text>
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Text style={styles.logoutButtonText}>🚪 Logout</Text>
+          </TouchableOpacity>
           <Animated.View 
             style={[
               styles.headerDecor,
@@ -156,6 +192,14 @@ export default function Page2() {
               color: colors.warning,
               onPress: navigateToMyComplaints,
               index: 2
+            },
+            { 
+              icon: '👤', 
+              title: 'User Profile', 
+              subtitle: 'Edit your info',
+              color: colors.primaryLight, 
+              onPress: navigateToUserProfile,
+              index: 3
             }
           ].map((button, buttonIndex) => (
             <Animated.View
@@ -327,5 +371,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     fontWeight: '500',
+  },
+  logoutButton: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: colors.danger,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  logoutButtonText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

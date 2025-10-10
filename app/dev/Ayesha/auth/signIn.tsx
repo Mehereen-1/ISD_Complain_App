@@ -20,9 +20,15 @@ export default function SignIn() {
   }, []);
 
   const handleSignIn = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Error", "Please enter both email and password");
+      return;
+    }
+    
     try {
       await signIn(email, password);
-      router.replace("/dev/Ayesha/complaint/list"); // navigate to complaint list
+      Alert.alert("Success", "Logged in successfully!");
+      router.replace("/dev/Rajorshi/Page2"); // Navigate to main Rajorshi page
     } catch (err: any) {
       Alert.alert("Error", err.message);
     }
@@ -34,8 +40,8 @@ export default function SignIn() {
         <Text style={styles.title}>You are already logged in as:</Text>
         <Text style={styles.email}>{currentUser.email}</Text>
         <Button
-          title="Go to Complaints"
-          onPress={() => router.replace("/dev/Ayesha/complaint/list")}
+          title="Go to Main App"
+          onPress={() => router.replace("/dev/Rajorshi/Page2")}
         />
       </View>
     );

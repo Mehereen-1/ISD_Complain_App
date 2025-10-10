@@ -9,16 +9,14 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { auth } from '../../../lib/firebaseConfig.js';
 import {
   Complaint,
-  deleteUserComplaint,
+  deleteComplaintByUser,
   listenUserComplaints,
-  updateComplaint // for editing title/desc
+  updateComplaint
 } from '../Ayesha/services/dbService';
 import { colors } from './colors';
-
-// Replace with actual user UID from auth
-const currentUserUid = 'student-uid';
 
 export default function MyComplaints() {
   const [myComplaints, setMyComplaints] = useState<Complaint[]>([]);
@@ -26,36 +24,70 @@ export default function MyComplaints() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [currentUserUid, setCurrentUserUid] = useState<string | null>(null);
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      setCurrentUserUid(user ? user.uid : null);
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
+    if (!currentUserUid) return; // Don't listen if not logged in
+    console.log('Setting up listener for user:', currentUserUid);
     const unsubscribe = listenUserComplaints(currentUserUid, (data) => {
+      console.log('MyComplaints: received updated data, count =', data.length);
       const userComplaints = data.sort((a, b) => b.createdAt - a.createdAt);
       setMyComplaints(userComplaints);
       setRefreshing(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [currentUserUid]);
 
   const onRefresh = () => setRefreshing(true);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (complaint: Complaint) => {
+    if (!currentUserUid) {
+      Alert.alert('Error', 'You must be logged in to delete complaints.');
+      return;
+    }
+    
+    if (!complaint.id) {
+      Alert.alert('Error', 'Invalid complaint ID.');
+      return;
+    }
+    
     Alert.alert(
-      'Delete Complaint',
+      'Delete Complaint', 
       'Are you sure you want to delete this complaint?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
         {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteUserComplaint(currentUserUid, id);
-              Alert.alert('Success', 'Complaint deleted successfully');
+              console.log('🚀 MyComplaints: Starting delete process');
+              console.log('👤 Current user:', currentUserUid);
+              console.log('📝 Complaint ID:', complaint.id);
+              console.log('📋 Complaint title:', complaint.title);
+              console.log('🏗️ Complaint createdBy:', complaint.createdBy);
+              
+              await deleteComplaintByUser(currentUserUid, complaint.id!, complaint);
+              
+              console.log('✅ MyComplaints: Delete completed successfully');
+              Alert.alert('Success', 'Complaint deleted successfully.');
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete complaint');
+              console.error('❌ MyComplaints: Delete error:', error);
+              Alert.alert('Error', `Failed to delete: ${(error as Error).message}`);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -92,12 +124,22 @@ export default function MyComplaints() {
     }
   };
 
+  // Only use the three allowed statuses
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Pending': return colors.danger;
-      case 'In Progress': return colors.warning;
-      case 'Solved': return colors.success;
+      case 'Pending': return colors.danger;         // red
+      case 'In Progress': return colors.warning;    // yellow/orange
+      case 'Solved': return colors.success;         // green
       default: return colors.background;
+    }
+  };
+
+  const getStatusTextColor = (status: string) => {
+    switch (status) {
+      case 'Pending': return colors.white;
+      case 'In Progress': return colors.textPrimary;
+      case 'Solved': return colors.white;
+      default: return colors.textPrimary;
     }
   };
 
@@ -179,7 +221,7 @@ export default function MyComplaints() {
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.deleteButton}
-                        onPress={() => handleDelete(complaint.id!)}
+                        onPress={() => handleDelete(complaint)}
                       >
                         <Text style={styles.deleteButtonText}>🗑️</Text>
                       </TouchableOpacity>
@@ -209,7 +251,12 @@ export default function MyComplaints() {
                   styles.statusBadge,
                   { backgroundColor: getStatusColor(complaint.status) }
                 ]}>
-                  <Text style={styles.statusButtonText}>{complaint.status}</Text>
+                  <Text style={[
+                    styles.statusButtonText,
+                    { color: getStatusTextColor(complaint.status) }
+                  ]}>
+                    {complaint.status}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -379,17 +426,28 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.textPrimary,
   },
-  statusButtonText: {
-    fontSize: 12,
-    color: colors.white,
-    fontWeight: 'bold',
-  },
   statusBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 32,
+    minWidth: 80,
+    marginLeft: 8,
+    // Add a border for better visibility
+    borderWidth: 1,
+    borderColor: colors.textSecondary,
+    // Optionally add shadow for elevation
+    shadowColor: colors.cardShadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+  },
+  statusButtonText: {
+    fontSize: 14,
+    color: colors.white,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
 });

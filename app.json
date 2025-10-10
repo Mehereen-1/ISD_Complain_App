@@ -37,6 +37,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "ADMIN_EMAIL": "admin@university.edu",
+      "ADMIN_PASS": "admin101"
     }
   }
 }

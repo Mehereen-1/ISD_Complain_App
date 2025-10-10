@@ -1,5 +1,7 @@
+import { get, ref } from "firebase/database";
 import React, { useEffect, useState } from 'react';
 import {
+  Alert,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -7,7 +9,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { Complaint, listenAllComplaints } from '../Ayesha/services/dbService';
+import { auth, db } from '../../../lib/firebaseConfig.js'; // Adjust if needed
+import { Complaint, deleteComplaintByUser, listenAllComplaints, StudentProfile } from '../Ayesha/services/dbService';
 import { colors } from './colors';
 
 const STATUS_OPTIONS = ['All', 'Pending', 'In Progress', 'Solved'];
@@ -16,9 +19,21 @@ export default function ComplaintsFeed() {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('All');
+  const [studentProfiles, setStudentProfiles] = useState<{ [uid: string]: StudentProfile }>({});
+  const [currentUserUid, setCurrentUserUid] = useState<string | null>(null);
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      setCurrentUserUid(user ? user.uid : null);
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
+    console.log('ComplaintsFeed: Setting up listener for all complaints');
     const unsubscribe = listenAllComplaints((data) => {
+      console.log('ComplaintsFeed: received updated data, count =', data.length);
       const sortedData = data.sort((a, b) => b.createdAt - a.createdAt);
       setComplaints(sortedData);
       setRefreshing(false);
@@ -26,7 +41,62 @@ export default function ComplaintsFeed() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    // Fetch all student profiles once
+    const fetchProfiles = async () => {
+      const snapshot = await get(ref(db, "students"));
+      if (snapshot.exists()) {
+        setStudentProfiles(snapshot.val());
+      }
+    };
+    fetchProfiles();
+  }, []);
+
   const onRefresh = () => setRefreshing(true);
+
+  const handleDelete = async (complaint: Complaint) => {
+    if (!currentUserUid) {
+      Alert.alert('Error', 'You must be logged in to delete complaints.');
+      return;
+    }
+    
+    if (!complaint.id) {
+      Alert.alert('Error', 'Invalid complaint ID.');
+      return;
+    }
+    
+    Alert.alert(
+      'Delete Complaint', 
+      'Are you sure you want to delete this complaint?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('🚀 ComplaintsFeed: Starting delete process');
+              console.log('👤 Current user:', currentUserUid);
+              console.log('📝 Complaint ID:', complaint.id);
+              console.log('🏗️ Complaint createdBy:', complaint.createdBy);
+              console.log('✅ User match:', currentUserUid === complaint.createdBy);
+              
+              await deleteComplaintByUser(currentUserUid, complaint.id!, complaint);
+              
+              console.log('✅ ComplaintsFeed: Delete completed successfully');
+              Alert.alert('Success', 'Complaint deleted successfully.');
+            } catch (error) {
+              console.error('❌ ComplaintsFeed: Delete error:', error);
+              Alert.alert('Error', `Failed to delete: ${(error as Error).message}`);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -86,25 +156,50 @@ export default function ComplaintsFeed() {
             <Text style={styles.emptySubText}>Be the first to submit one!</Text>
           </View>
         ) : (
-          filteredComplaints.map((complaint) => (
-            <View key={complaint.id} style={styles.complaintCard}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.complaintTitle}>{complaint.title}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(complaint.status) }]}>
-                  <Text style={styles.statusText}>
-                    {getStatusIcon(complaint.status)} {complaint.status}
+          filteredComplaints.map((complaint) => {
+            const student = studentProfiles[complaint.createdBy];
+            return (
+              <View key={complaint.id} style={styles.complaintCard}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.complaintTitle}>{complaint.title}</Text>
+                  <View style={styles.headerRight}>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(complaint.status) }]}>
+                      <Text style={styles.statusText}>
+                        {getStatusIcon(complaint.status)} {complaint.status}
+                      </Text>
+                    </View>
+                    {currentUserUid === complaint.createdBy && (
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDelete(complaint)}
+                      >
+                        <Text style={styles.deleteButtonText}>🗑️</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+                <Text style={styles.complaintDescription}>{complaint.description}</Text>
+                <View style={styles.cardFooter}>
+                  <View>
+                    <Text style={styles.createdBy}>
+                      👤 {student ? student.name : complaint.createdBy}
+                    </Text>
+                    {student && (
+                      <>
+                        <Text style={styles.studentInfo}>Roll: {student.roll}</Text>
+                        <Text style={styles.studentInfo}>Dept: {student.department}</Text>
+                        <Text style={styles.studentInfo}>Batch: {student.batch}</Text>
+                        <Text style={styles.studentInfo}>Hall: {student.hall}</Text>
+                      </>
+                    )}
+                  </View>
+                  <Text style={styles.createdAt}>
+                    📅 {new Date(complaint.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
               </View>
-              <Text style={styles.complaintDescription}>{complaint.description}</Text>
-              <View style={styles.cardFooter}>
-                <Text style={styles.createdBy}>👤 {complaint.createdBy}</Text>
-                <Text style={styles.createdAt}>
-                  📅 {new Date(complaint.createdAt).toLocaleDateString()}
-                </Text>
-              </View>
-            </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
     </View>
@@ -220,5 +315,23 @@ const styles = StyleSheet.create({
   createdAt: {
     fontSize: 12,
     color: colors.textSecondary,
+  },
+  studentInfo: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  deleteButton: {
+    padding: 4,
+    borderRadius: 4,
+    backgroundColor: colors.dangerLight,
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    color: colors.danger,
   },
 });
