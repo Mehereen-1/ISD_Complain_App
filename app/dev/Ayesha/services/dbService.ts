@@ -2,40 +2,6 @@
 import { get, onValue, push, ref, remove, set, update } from "firebase/database";
 import { db } from "../../../../lib/firebaseConfig";
 
-export const getStudentByComplaintId = async (complaintId: string): Promise<StudentProfile | null> => {
-  try {
-    // Step 1: Get the complaint details
-    const complaintRef = ref(db, `complaints/${complaintId}`);
-    const complaintSnap = await get(complaintRef);
-
-    if (!complaintSnap.exists()) {
-      console.log("Complaint not found");
-      return null;
-    }
-
-    const complaintData = complaintSnap.val();
-    const createdByUid = complaintData.createdBy;
-
-    if (!createdByUid) {
-      console.log("No createdBy field in complaint");
-      return null;
-    }
-
-    // Step 2: Fetch the student from "students" table using uid
-    const studentRef = ref(db, `students/${createdByUid}`);
-    const studentSnap = await get(studentRef);
-
-    if (!studentSnap.exists()) {
-      console.log("Student not found");
-      return null;
-    }
-
-    return { uid: createdByUid, ...studentSnap.val() } as StudentProfile;
-  } catch (error) {
-    console.error("Error fetching student by complaint ID:", error);
-    return null;
-  }
-};
 // services/dbService.ts
 import { Alert } from "react-native";
 
@@ -143,9 +109,19 @@ export const listenComplaintsByCategory = (category: string, callback: (data: Co
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((complaint) => complaint.category === category)
-      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // Sort by createdAt descending (newest first)
-(list);
+      .filter((complaint) => complaint.category === category);
+    callback(list);
+  });
+};
+
+export const listenComplaintsByStatus = (status: string, callback: (data: Complaint[]) => void) => {
+  const complaintsRef = ref(db, "complaints");
+  return onValue(complaintsRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    const list: Complaint[] = Object.entries(data)
+      .map(([id, val]: [string, any]) => ({ id, ...val }))
+      .filter((complaint) => complaint.status === status);
+    callback(list);
   });
 };
 
@@ -196,15 +172,33 @@ export const deleteComplaintByUser = async (uid: string, id: string, complaint: 
     throw new Error("You must be logged in to delete complaints.");
   }
 
-  if (!id) {
-    console.log('❌ Error: No complaint ID provided');
-    throw new Error("Complaint ID is missing.");
-  }
+            if (!complaint.id) {
+              Alert.alert("Error", "Complaint ID is missing.");
+              return;
+            }
 
-  console.log('➡️ Calling deleteUserComplaint...');
-  await deleteUserComplaint(uid, id);
-  console.log('✅ deleteComplaintByUser completed successfully');
+            await deleteUserComplaint(uid, complaint.id);
+            Alert.alert("Success", "Complaint deleted successfully!");
+          } catch (err) {
+            console.error(err);
+            Alert.alert("Error", "Could not delete complaint.");
+          }
+        },
+      },
+    ]
+  );
 };
+
+export const updateComplaint = async (id: string, updatedData: Partial<Complaint>) => {
+  const complaintRef = ref(db, `complaints/${id}`);
+  await update(complaintRef, {
+    ...updatedData,
+    updatedAt: Date.now(), // optional field to track updates
+  });
+};
+
+
+//Admin
 
 // Delete complaint by the admin
 export const deleteComplaintByAdmin = (id: string) => {
@@ -235,11 +229,85 @@ export const deleteComplaintByAdmin = (id: string) => {
 export const updateComplaintStatus = async (id: string, status: ComplaintStatus) => {
   await update(ref(db, `complaints/${id}`), { status });
 };
-//User Update Complaint
-export const updateComplaint = async (id: string, updatedData: Partial<Complaint>) => {
-  const complaintRef = ref(db, `complaints/${id}`);
-  await update(complaintRef, {
-    ...updatedData,
-    updatedAt: Date.now(), // optional field to track updates
-  });
+
+export const getStudentByComplaintId = async (complaintId: string): Promise<StudentProfile | null> => {
+  try {
+    // Step 1: Get the complaint details
+    const complaintRef = ref(db, `complaints/${complaintId}`);
+    const complaintSnap = await get(complaintRef);
+
+    if (!complaintSnap.exists()) {
+      console.log("Complaint not found");
+      return null;
+    }
+
+    const complaintData = complaintSnap.val();
+    const createdByUid = complaintData.createdBy;
+
+    if (!createdByUid) {
+      console.log("No createdBy field in complaint");
+      return null;
+    }
+
+    // Step 2: Fetch the student from "students" table using uid
+    const studentRef = ref(db, `students/${createdByUid}`);
+    const studentSnap = await get(studentRef);
+
+    if (!studentSnap.exists()) {
+      console.log("Student not found");
+      return null;
+    }
+
+    return { uid: createdByUid, ...studentSnap.val() } as StudentProfile;
+  } catch (error) {
+    console.error("Error fetching student by complaint ID:", error);
+    return null;
+  }
+};
+
+
+// Add admin notification for new complaint
+//   try {
+//     const { addAdminNotification } = await import("../../Adiba/services/adminNotificationService");
+//     await addAdminNotification({
+//       type: "new",
+//       title: "New Complaint Received",
+//       message: Complaint: ${complaint.title} (ID: ${complaintRef.key!}),
+//       time: createdAt,
+//       read: false,
+//       complaintId: complaintRef.key!,
+//     });
+//   } catch (e) {
+//     // fail silently if notification service not available
+//   }
+//   return complaintRef.key!;
+// };
+
+export interface Admin {
+  uid: string;
+  email: string;
+  password: string; // if you store plain text (not recommended)
+}
+export const isAdmin = async (email: string, password: string): Promise<boolean> => {
+  try {
+    const adminsRef = ref(db, "admins");
+    const snapshot = await get(adminsRef);
+
+    if (!snapshot.exists()) return false;
+
+    const adminsData = snapshot.val();
+    
+    // Loop through all admins
+    for (const key in adminsData) {
+      const admin = adminsData[key];
+      if (admin.email === email && admin.password === password) {
+        return true;
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Error checking admin:", error);
+    return false;
+  }
 };

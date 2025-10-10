@@ -2,6 +2,7 @@
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Button, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { colors } from "../../Adiba/constants/colors";
 import { signUp } from "../services/authService";
 
 export default function SignUp() {
@@ -31,25 +32,89 @@ export default function SignUp() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Student Sign Up</Text>
-
-      <TextInput style={styles.input} placeholder="Full Name" value={name} onChangeText={setName} />
-      <TextInput style={styles.input} placeholder="Roll" value={roll} onChangeText={setRoll} />
-      <TextInput style={styles.input} placeholder="Department" value={department} onChangeText={setDepartment} />
-      <TextInput style={styles.input} placeholder="Batch" value={batch} onChangeText={setBatch} />
-      <TextInput style={styles.input} placeholder="Hall" value={hall} onChangeText={setHall} />
-      <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-
-      <Button title="Sign Up" onPress={handleSignUp} />
-      <View style={{ marginTop: 10 }}>
-        <Button title="Already have an account? Sign In" onPress={() => router.push("/dev/Ayesha/auth/signIn")} />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Student Sign Up</Text>
+      </View>
+      <View style={styles.tabRow}>
+        <View style={styles.tab}>
+          <Text
+            style={styles.tabText}
+            onPress={() => router.push("/dev/Ayesha/auth/signIn")}
+          >
+            Sign In
+          </Text>
+        </View>
+        <View style={[styles.tab, styles.activeTab]}>
+          <Text style={[styles.tabText, { color: colors.white }]}>Sign Up</Text>
+        </View>
+      </View>
+      <View style={styles.formCard}>
+        <Text style={styles.formLabel}>Full Name</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Full Name"
+          value={name}
+          onChangeText={setName}
+          placeholderTextColor={colors.textSecondary}
+        />
+        <Text style={styles.formLabel}>Roll</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Roll"
+          value={roll}
+          onChangeText={setRoll}
+          placeholderTextColor={colors.textSecondary}
+        />
+        <Text style={styles.formLabel}>Department</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Department"
+          value={department}
+          onChangeText={setDepartment}
+          placeholderTextColor={colors.textSecondary}
+        />
+        <Text style={styles.formLabel}>Batch</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Batch"
+          value={batch}
+          onChangeText={setBatch}
+          placeholderTextColor={colors.textSecondary}
+        />
+        <Text style={styles.formLabel}>Hall</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Hall"
+          value={hall}
+          onChangeText={setHall}
+          placeholderTextColor={colors.textSecondary}
+        />
+        <Text style={styles.formLabel}>Email</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          placeholderTextColor={colors.textSecondary}
+        />
+        <Text style={styles.formLabel}>Password</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          placeholderTextColor={colors.textSecondary}
+        />
+        <View style={styles.buttonRow}>
+          <Button title="Sign Up" color={colors.roseTaupe} onPress={handleSignUp} />
+        </View>
+        <Text
+          style={styles.linkText}
+          onPress={() => router.push("/dev/Ayesha/auth/signIn")}
+        >
+          Already have an account? Sign In
+        </Text>
       </View>
     </ScrollView>
   );
@@ -58,23 +123,78 @@ export default function SignUp() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
+    backgroundColor: colors.platinum,
+    paddingTop: 40,
+    paddingBottom: 40,
+    paddingHorizontal: 0,
     justifyContent: "center",
-    padding: 20,
-    backgroundColor: "#E3E0E0", // Platinum theme background
   },
-  title: {
-    fontSize: 26,
+  header: {
+    paddingHorizontal: 24,
+    paddingBottom: 10,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 28,
     fontWeight: "bold",
-    textAlign: "center",
+    color: colors.textPrimary,
+    marginBottom: 10,
+  },
+  tabRow: {
+    flexDirection: "row",
+    justifyContent: "center",
     marginBottom: 20,
-    color: "#8F696A", // Rose Taupe
+  },
+  tab: {
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    backgroundColor: colors.rosyBrown,
+    borderRadius: 20,
+    marginHorizontal: 5,
+  },
+  activeTab: {
+    backgroundColor: colors.textPrimary,
+  },
+  tabText: {
+    color: colors.textPrimary,
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  formCard: {
+    backgroundColor: colors.white,
+    marginHorizontal: 24,
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: colors.cardShadow,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  formLabel: {
+    fontSize: 16,
+    color: colors.textPrimary,
+    marginBottom: 4,
+    marginTop: 10,
+    fontWeight: "bold",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#AC8A9A", // Mountbatten Pink
-    padding: 12,
-    marginBottom: 12,
+    borderColor: colors.rosyBrown,
+    padding: 10,
+    marginBottom: 10,
     borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.platinum,
+    color: colors.textPrimary,
+  },
+  buttonRow: {
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  linkText: {
+    color: colors.textPrimary,
+    marginTop: 16,
+    textAlign: "center",
+    textDecorationLine: "underline",
+    fontWeight: "bold",
   },
 });
