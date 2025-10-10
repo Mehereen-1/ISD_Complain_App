@@ -1,9 +1,10 @@
 // Fetch student profile by complaint ID
 import { get, onValue, push, ref, remove, set, update } from "firebase/database";
-import { db } from "../../../../lib/firebaseConfig";
+import { auth, db } from "../../../../lib/firebaseConfig";
 
 // services/dbService.ts
 import { Alert } from "react-native";
+
 
 // ---------------------- Interfaces ----------------------
 export interface StudentProfile {
@@ -161,16 +162,22 @@ export const deleteUserComplaint = async (uid: string, id: string) => {
   
 };
 
-export const deleteComplaintByUser = async (uid: string, id: string, complaint: Complaint) => {
-  console.log('🔄 deleteComplaintByUser called with:');
-  console.log('   👤 uid:', uid);
-  console.log('   📝 id:', id);
-  console.log('   📋 complaint title:', complaint.title);
-  
-  if (!uid) {
-    console.log('❌ Error: No user ID provided');
-    throw new Error("You must be logged in to delete complaints.");
-  }
+export const deleteComplaintByUser = (uid: string, id: string, complaint: Complaint) => {
+  Alert.alert(
+    "Confirm Delete",
+    "Are you sure you want to delete this complaint?",
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+              Alert.alert("Error", "You must be logged in to delete complaints.");
+              return;
+            }
 
             if (!complaint.id) {
               Alert.alert("Error", "Complaint ID is missing.");
