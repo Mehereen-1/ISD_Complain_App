@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../constants/colors";
 import {
-    AdminNotification,
-    deleteAdminNotification,
-    listenAdminNotifications,
-    markAdminNotificationRead
+  AdminNotification,
+  deleteAdminNotification,
+  listenAdminNotifications,
+  markAdminNotificationRead
 } from "../services/adminNotificationService";
 
 interface Notification {
@@ -34,11 +34,9 @@ export default function NotificationsTab({ setUnreadCount }: NotificationsTabPro
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   React.useEffect(() => {
     const unsubscribe = listenAdminNotifications((data) => {
-      // Show only notifications from last 24 hours
-      const now = Date.now();
-      const oneDayMs = 24 * 60 * 60 * 1000;
-      const recent = data.filter(n => n.time && (now - n.time < oneDayMs));
-      setNotifications(recent);
+      // Show all notifications, sorted by time (newest first)
+      const sorted = data.sort((a, b) => b.time - a.time);
+      setNotifications(sorted);
     });
     return () => {
       if (typeof unsubscribe === "function") unsubscribe();
