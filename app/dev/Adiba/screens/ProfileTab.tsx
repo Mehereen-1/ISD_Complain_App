@@ -1,7 +1,7 @@
 import * as authService from "@/app/dev/Ayesha/services/authService";
 import { router } from 'expo-router';
 import React, { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../constants/colors";
 
 export default function ProfileTab() {
@@ -17,34 +17,22 @@ export default function ProfileTab() {
   };
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [logoutPassword, setLogoutPassword] = useState("");
 
-  const handleChangePassword = () => {
-    Alert.alert(
-      "Change Password",
-      "Password change functionality will be implemented soon.",
-      [{ text: "OK" }]
-    );
-  };
+
 
   const handleLogout = () => {
     setShowLogoutModal(true);
   };
 
   const confirmLogout = async () => {
-    if (logoutPassword !== adminPass) {
-      Alert.alert("Error", "Incorrect password. Please try again.");
-      return;
-    }
     setShowLogoutModal(false);
-    setLogoutPassword("");
     try {
       await authService.logout();
       router.push('/dev/Ayesha/auth/signIn');
     } catch (error) {
       Alert.alert("Error", "Failed to logout. Please try again.");
     }
-  };
+  }
 
   return (
     <>
@@ -67,12 +55,6 @@ export default function ProfileTab() {
       <View style={styles.actionsContainer}>
         <Text style={styles.sectionTitle}>Account</Text>
         <View style={styles.actionsList}>
-          <TouchableOpacity style={styles.actionItem} onPress={handleChangePassword}>
-            <Text style={styles.actionIcon}>�</Text>
-            <Text style={styles.actionText}>Change Password</Text>
-            <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
-          
           <TouchableOpacity style={[styles.actionItem, {borderBottomWidth: 0}]} onPress={handleLogout}>
             <Text style={styles.actionIcon}>🚪</Text>
             <Text style={styles.actionText}>Logout</Text>
@@ -96,15 +78,8 @@ export default function ProfileTab() {
           </View>
           <View style={styles.modalBody}>
             <Text style={styles.modalText}>
-              Are you sure you want to logout? Please enter your password to confirm.
+              Are you sure you want to logout?
             </Text>
-            <TextInput
-              style={styles.passwordInput}
-              placeholder="Enter admin password"
-              secureTextEntry
-              value={logoutPassword}
-              onChangeText={setLogoutPassword}
-            />
           </View>
           <View style={styles.modalButtons}>
             <TouchableOpacity 
@@ -303,13 +278,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.white,
   },
-  passwordInput: {
-    borderWidth: 1,
-    borderColor: colors.platinum,
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 12,
-    fontSize: 16,
-    backgroundColor: colors.white,
-  },
+// ...existing code...
 });

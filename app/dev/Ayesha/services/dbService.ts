@@ -138,7 +138,7 @@ export const listenComplaintsByCategory = (category: string, callback: (data: Co
       .map(([id, val]: [string, any]) => ({ id, ...val }))
       .filter((complaint) => complaint.category === category)
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // Sort by createdAt descending (newest first)
-    callback(list);
+(list);
   });
 };
 
