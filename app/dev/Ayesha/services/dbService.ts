@@ -79,10 +79,9 @@ export const listenAllComplaints = (callback: (data: Complaint[]) => void) => {
   return onValue(complaintsRef, (snapshot) => {
     console.log('listenAllComplaints: received data update');
     const data = snapshot.val() || {};
-    const list: Complaint[] = Object.entries(data).map(([id, val]: [string, any]) => ({
-      id,
-      ...val,
-    }));
+    const list: Complaint[] = Object.entries(data)
+      .map(([id, val]: [string, any]) => ({ id, ...val }))
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // newest first
     console.log('listenAllComplaints: complaint count =', list.length);
     callback(list);
   });
@@ -96,7 +95,8 @@ export const listenUserComplaints = (uid: string, callback: (data: Complaint[]) 
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((complaint) => complaint.createdBy === uid);
+      .filter((complaint) => complaint.createdBy === uid)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // newest first
     console.log('listenUserComplaints: user complaint count =', list.length);
     callback(list);
   });
@@ -109,7 +109,8 @@ export const listenComplaintsByCategory = (category: string, callback: (data: Co
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((complaint) => complaint.category === category);
+      .filter((complaint) => complaint.category === category)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // newest first
     callback(list);
   });
 };
@@ -120,7 +121,8 @@ export const listenComplaintsByStatus = (status: string, callback: (data: Compla
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((complaint) => complaint.status === status);
+      .filter((complaint) => complaint.status === status)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // newest first
     callback(list);
   });
 };

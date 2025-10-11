@@ -2,6 +2,7 @@ import * as authService from "@/app/dev/Ayesha/services/authService";
 import { router } from 'expo-router';
 import React, { useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from "../constants/colors";
 
 export default function ProfileTab() {
@@ -17,6 +18,7 @@ export default function ProfileTab() {
   };
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const insets = useSafeAreaInsets();
 
 
 
@@ -35,7 +37,7 @@ export default function ProfileTab() {
   }
 
   return (
-    <>
+    <SafeAreaView style={[styles.container, { paddingBottom: Math.max(40, insets.bottom + 12) }]} edges={["top","left","right","bottom"]}>
     <View style={styles.container}>
       {/* Profile Header */}
       <View style={styles.profileHeader}>
@@ -100,7 +102,7 @@ export default function ProfileTab() {
         </View>
       </View>
     )}
-    </>
+    </SafeAreaView>
   );
 }
 

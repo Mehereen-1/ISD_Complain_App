@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../constants/colors";
 import {
   AdminNotification,
@@ -23,6 +24,7 @@ interface NotificationsTabProps {
 
 export default function NotificationsTab({ setUnreadCount }: NotificationsTabProps) {
   const router = require('expo-router').useRouter();
+  const insets = useSafeAreaInsets();
   // Helper to extract complaint ID from notification
   function getComplaintId(notification: AdminNotification): string | null {
     // If notification has complaintId field, use it
@@ -78,6 +80,7 @@ export default function NotificationsTab({ setUnreadCount }: NotificationsTabPro
   }, [unreadCount, setUnreadCount]);
 
   return (
+    <SafeAreaView style={[styles.container, { paddingBottom: Math.max(40, insets.bottom + 12) }]} edges={["top", "left", "right", "bottom"]}>
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -147,6 +150,7 @@ export default function NotificationsTab({ setUnreadCount }: NotificationsTabPro
         </View>
       )}
     </View>
+    </SafeAreaView>
   );
 }
 

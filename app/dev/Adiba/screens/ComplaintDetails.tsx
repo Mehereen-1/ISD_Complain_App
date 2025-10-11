@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { get, ref, remove } from "firebase/database";
 import React, { useState } from "react";
 import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from "../../../../lib/firebaseConfig";
 import { getStudentByComplaintId, StudentProfile, updateComplaintStatus } from "../../Ayesha/services/dbService";
 import { colors } from "../constants/colors";
@@ -184,8 +185,8 @@ export default function ComplaintDetails() {
   };
 
   return (
-    <>
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container} edges={["top","left","right","bottom"]}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
       {/* Header with back arrow for admin */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16 }}>
         <TouchableOpacity
@@ -313,7 +314,6 @@ export default function ComplaintDetails() {
           </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
 
     {/* Image Zoom Modal */}
     {showImageModal && complaint?.imageUrl && (
@@ -482,7 +482,8 @@ export default function ComplaintDetails() {
         </View>
       </View>
     )}
-    </>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
