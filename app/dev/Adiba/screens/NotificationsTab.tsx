@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../constants/colors";
 import {
-    AdminNotification,
-    deleteAdminNotification,
-    listenAdminNotifications,
-    markAdminNotificationRead
+  AdminNotification,
+  deleteAdminNotification,
+  listenAdminNotifications,
+  markAdminNotificationRead
 } from "../services/adminNotificationService";
 
 interface Notification {
@@ -23,6 +24,7 @@ interface NotificationsTabProps {
 
 export default function NotificationsTab({ setUnreadCount }: NotificationsTabProps) {
   const router = require('expo-router').useRouter();
+  const insets = useSafeAreaInsets();
   // Helper to extract complaint ID from notification
   function getComplaintId(notification: AdminNotification): string | null {
     // If notification has complaintId field, use it
@@ -34,11 +36,9 @@ export default function NotificationsTab({ setUnreadCount }: NotificationsTabPro
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   React.useEffect(() => {
     const unsubscribe = listenAdminNotifications((data) => {
-      // Show only notifications from last 24 hours
-      const now = Date.now();
-      const oneDayMs = 24 * 60 * 60 * 1000;
-      const recent = data.filter(n => n.time && (now - n.time < oneDayMs));
-      setNotifications(recent);
+      // Show all notifications, sorted by time (newest first)
+      const sorted = data.sort((a, b) => b.time - a.time);
+      setNotifications(sorted);
     });
     return () => {
       if (typeof unsubscribe === "function") unsubscribe();
@@ -80,6 +80,7 @@ export default function NotificationsTab({ setUnreadCount }: NotificationsTabPro
   }, [unreadCount, setUnreadCount]);
 
   return (
+    <SafeAreaView style={[styles.container, { paddingBottom: Math.max(40, insets.bottom + 12) }]} edges={["top", "left", "right", "bottom"]}>
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -149,6 +150,7 @@ export default function NotificationsTab({ setUnreadCount }: NotificationsTabPro
         </View>
       )}
     </View>
+    </SafeAreaView>
   );
 }
 
