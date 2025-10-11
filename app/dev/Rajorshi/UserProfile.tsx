@@ -130,7 +130,7 @@ export default function UserProfile() {
             try {
               await logout();
               Alert.alert("Success", "Logged out successfully");
-              router.replace('/dev/Ayesha/homepage');
+              router.replace('/dev/Ayesha/auth/signIn');
             } catch (err: any) {
               Alert.alert("Error", err.message);
             }

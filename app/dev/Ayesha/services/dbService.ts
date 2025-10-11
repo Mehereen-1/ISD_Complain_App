@@ -5,73 +5,73 @@ import { db } from "../../../../lib/firebaseConfig";
 // services/dbService.ts
 import { Alert } from "react-native";
 
-// ---------------------- Interfaces ----------------------
-export interface StudentProfile {
-  uid: string;
-  name: string;
-  email: string;
-  roll: string;
-  department: string;
-  batch: string;
-  hall: string;
-  createdAt: number;
-}
+          // ---------------------- Interfaces ----------------------
+          export interface StudentProfile {
+            uid: string;
+            name: string;
+            email: string;
+            roll: string;
+            department: string;
+            batch: string;
+            hall: string;
+            createdAt: number;
+          }
 
-export type ComplaintStatus = "Pending" | "In Progress" | "Resolved";
+          export type ComplaintStatus = "Pending" | "In Progress" | "Resolved";
 
-export interface Complaint {
-  id?: string;
-  title: string;
-  description: string;
-  category: string; // chosen from predefined list
-  zone: string;     // chosen from predefined list
-  imageUrl?: string;
-  status: ComplaintStatus;
-  createdBy: string; // uid of student
-  createdAt: number;
-}
+          export interface Complaint {
+            id?: string;
+            title: string;
+            description: string;
+            category: string; // chosen from predefined list
+            zone: string;     // chosen from predefined list
+            imageUrl?: string;
+            status: ComplaintStatus;
+            createdBy: string; // uid of student
+            createdAt: number;
+          }
 
-// ---------------------- Student Profile ----------------------
-export const createStudentProfile = async (student: StudentProfile) => {
-  const studentRef = ref(db, `students/${student.uid}`);
-  await set(studentRef, {
-    ...student,
-    createdAt: student.createdAt || Date.now(),
-  });
-};
+          // ---------------------- Student Profile ----------------------
+          export const createStudentProfile = async (student: StudentProfile) => {
+            const studentRef = ref(db, `students/${student.uid}`);
+            await set(studentRef, {
+              ...student,
+              createdAt: student.createdAt || Date.now(),
+            });
+          };
 
-export const editProfile = async (uid: string, updates: Partial<StudentProfile>) => {
-  const studentRef = ref(db, `students/${uid}`);
-  await update(studentRef, updates);
-};
+          export const editProfile = async (uid: string, updates: Partial<StudentProfile>) => {
+            const studentRef = ref(db, `students/${uid}`);
+            await update(studentRef, updates);
+          };
 
-// ---------------------- Complaints ----------------------
+          // ---------------------- Complaints ----------------------
 
-// Add a new complaint
-export const addComplaint = async (complaint: Complaint): Promise<string> => {
-  const complaintRef = push(ref(db, "complaints"));
-  const createdAt = Date.now();
-  await set(complaintRef, {
-    ...complaint,
-    status: "Pending",
-    createdAt,
-  });
-  // Add admin notification for new complaint
-  try {
-    const { addAdminNotification } = await import("../../Adiba/services/adminNotificationService");
-    await addAdminNotification({
-      type: "new",
-      title: "New Complaint Received",
-      message: `Complaint: ${complaint.title} (ID: ${complaintRef.key!})`,
-      time: createdAt,
-      read: false,
-      complaintId: complaintRef.key!,
-    });
-  } catch (e) {
-    // fail silently if notification service not available
-  }
-  return complaintRef.key!;
-};
+          // Add a new complaint
+          export const addComplaint = async (complaint: Complaint): Promise<string> => {
+            const complaintRef = push(ref(db, "complaints"));
+            const createdAt = Date.now();
+            await set(complaintRef, {
+              ...complaint,
+              status: "Pending",
+              createdAt,
+            });
+            // Add admin notification for new complaint
+            try {
+              const { addAdminNotification } = await import("../../Adiba/services/adminNotificationService");
+              await addAdminNotification({
+                type: "new",
+                title: "New Complaint Received",
+                message: `Complaint: ${complaint.title} (ID: ${complaintRef.key!})`,
+                time: createdAt,
+                read: false,
+                complaintId: complaintRef.key!,
+              });
+            } catch (e) {
+              // fail silently if notification service not available
+            }
+            return complaintRef.key!;
+          };
 
 // Display all complaints (admin use)
 export const listenAllComplaints = (callback: (data: Complaint[]) => void) => {
@@ -79,10 +79,9 @@ export const listenAllComplaints = (callback: (data: Complaint[]) => void) => {
   return onValue(complaintsRef, (snapshot) => {
     console.log('listenAllComplaints: received data update');
     const data = snapshot.val() || {};
-    const list: Complaint[] = Object.entries(data).map(([id, val]: [string, any]) => ({
-      id,
-      ...val,
-    }));
+    const list: Complaint[] = Object.entries(data)
+      .map(([id, val]: [string, any]) => ({ id, ...val }))
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // newest first
     console.log('listenAllComplaints: complaint count =', list.length);
     callback(list);
   });
@@ -96,7 +95,8 @@ export const listenUserComplaints = (uid: string, callback: (data: Complaint[]) 
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((complaint) => complaint.createdBy === uid);
+      .filter((complaint) => complaint.createdBy === uid)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // newest first
     console.log('listenUserComplaints: user complaint count =', list.length);
     callback(list);
   });
@@ -109,7 +109,8 @@ export const listenComplaintsByCategory = (category: string, callback: (data: Co
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((complaint) => complaint.category === category);
+      .filter((complaint) => complaint.category === category)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // newest first
     callback(list);
   });
 };
@@ -120,7 +121,8 @@ export const listenComplaintsByStatus = (status: string, callback: (data: Compla
     const data = snapshot.val() || {};
     const list: Complaint[] = Object.entries(data)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((complaint) => complaint.status === status);
+      .filter((complaint) => complaint.status === status)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // newest first
     callback(list);
   });
 };
@@ -238,30 +240,30 @@ export const updateComplaint = async (id: string, updatedData: Partial<Complaint
 
 //Admin
 
-// Delete complaint by the admin
-export const deleteComplaintByAdmin = (id: string) => {
-  Alert.alert(
-    "Confirm Delete",
-    "Are you sure you want to delete this complaint as an admin?",
-    [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            const complaintRef = ref(db, `complaints/${id}`);
-            await remove(complaintRef);
-            Alert.alert("Success", "Complaint deleted successfully!");
-          } catch (err) {
-            console.error(err);
-            Alert.alert("Error", "Could not delete complaint.");
-          }
-        },
-      },
-    ]
-  );
-};
+          // Delete complaint by the admin
+          export const deleteComplaintByAdmin = (id: string) => {
+            Alert.alert(
+              "Confirm Delete",
+              "Are you sure you want to delete this complaint as an admin?",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Delete",
+                  style: "destructive",
+                  onPress: async () => {
+                    try {
+                      const complaintRef = ref(db, `complaints/${id}`);
+                      await remove(complaintRef);
+                      Alert.alert("Success", "Complaint deleted successfully!");
+                    } catch (err) {
+                      console.error(err);
+                      Alert.alert("Error", "Could not delete complaint.");
+                    }
+                  },
+                },
+              ]
+            );
+          };
 
 // Update complaint status (admin only)
 export const updateComplaintStatus = async (id: string, status: ComplaintStatus) => {

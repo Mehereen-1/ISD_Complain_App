@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { get, ref, remove } from "firebase/database";
 import React, { useState } from "react";
 import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from "../../../../lib/firebaseConfig";
 import { getStudentByComplaintId, StudentProfile, updateComplaintStatus } from "../../Ayesha/services/dbService";
 import { colors } from "../constants/colors";
@@ -184,13 +185,33 @@ export default function ComplaintDetails() {
   };
 
   return (
-    <>
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header removed as requested */}
+    <SafeAreaView style={styles.container} edges={["top","left","right","bottom"]}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+      {/* Header with back arrow for admin */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16 }}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{
+            marginRight: 12,
+            backgroundColor: colors.roseTaupe,
+            borderRadius: 20,
+            width: 40,
+            height: 40,
+            justifyContent: 'center',
+            alignItems: 'center',
+            shadowColor: colors.cardShadow,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 6,
+            elevation: 4,
+          }}
+        >
+          <Text style={{ fontSize: 22, color: colors.white, fontWeight: 'bold' }}>{'‹'}</Text>
+        </TouchableOpacity>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: colors.textPrimary }}>Complaint Details</Text>
+      </View>
 
       <View style={styles.content}>
-  {/* Complaint Details Title */}
-  <Text style={styles.headerTitle}>Complaint Details</Text>
   {/* Student Profile Section - Only Avatar, Name, Roll, and Details Button */}
   <View style={styles.studentCard}>
           <View style={styles.studentHeader}>
@@ -293,7 +314,6 @@ export default function ComplaintDetails() {
           </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
 
     {/* Image Zoom Modal */}
     {showImageModal && complaint?.imageUrl && (
@@ -462,7 +482,8 @@ export default function ComplaintDetails() {
         </View>
       </View>
     )}
-    </>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
