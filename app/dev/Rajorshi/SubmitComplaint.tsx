@@ -1,15 +1,16 @@
 import { Picker } from '@react-native-picker/picker';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { auth } from '../../../lib/firebaseConfig';
 import { addComplaint } from '../Ayesha/services/dbService';
@@ -32,6 +33,7 @@ const zones = [
 ];
 
 export default function SubmitComplaint() {
+  const router = useRouter();
   const [complaint, setComplaint] = useState({
     title: '',
     description: '',
@@ -92,6 +94,13 @@ export default function SubmitComplaint() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => router.back()}
+      >
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
+      
       <Text style={styles.title}>📝 Submit New Complaint</Text>
       <View style={styles.form}>
         <Text style={styles.label}>Complaint Title</Text>
@@ -201,17 +210,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.backgroundLight,
     padding: 16,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
     color: colors.textPrimary,
   },
   form: {
     backgroundColor: colors.white,
-    padding: 20,
+    padding: 16,
     borderRadius: 12,
     elevation: 3,
     shadowColor: colors.cardShadow,
@@ -220,9 +231,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 6,
     color: colors.textPrimary,
   },
   input: {
@@ -230,48 +241,52 @@ const styles = StyleSheet.create({
     borderColor: colors.primaryLight,
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: 12,
     fontSize: 16,
     backgroundColor: colors.backgroundLight,
     color: colors.textPrimary,
+    minHeight: 44,
   },
   textArea: {
-    height: 120,
+    height: 100,
+    textAlignVertical: 'top',
   },
   pickerWrapper: {
     borderWidth: 1,
     borderColor: colors.primaryLight,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: 12,
     backgroundColor: colors.backgroundLight,
     overflow: 'hidden',
+    minHeight: 44,
   },
   picker: {
     color: colors.textPrimary,
-    height: 48,
+    height: 44,
     width: '100%',
   },
   imagePickerButton: {
     backgroundColor: colors.secondary,
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: 12,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.primaryLight,
+    minHeight: 44,
   },
   imagePickerText: {
     color: colors.textLight,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   imagePreview: {
-    marginBottom: 16,
+    marginBottom: 12,
     alignItems: 'center',
   },
   previewImage: {
-    width: 200,
-    height: 200,
+    width: 150,
+    height: 150,
     borderRadius: 8,
     marginBottom: 8,
   },
@@ -288,12 +303,13 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: colors.primary,
-    padding: 16,
+    padding: 14,
     borderRadius: 8,
     marginTop: 8,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    minHeight: 48,
   },
   disabledButton: {
     backgroundColor: colors.textSecondary,
@@ -307,5 +323,29 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 40,
+    marginBottom: 16,
+    padding: 10,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignSelf: 'flex-start',
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    minHeight: 40,
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 4,
   },
 });
