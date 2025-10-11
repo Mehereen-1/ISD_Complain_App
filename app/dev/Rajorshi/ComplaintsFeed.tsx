@@ -2,6 +2,7 @@ import { get, ref } from "firebase/database";
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
+  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -13,7 +14,7 @@ import { auth, db } from '../../../lib/firebaseConfig.js'; // Adjust if needed
 import { Complaint, deleteComplaintByUser, listenAllComplaints, StudentProfile } from '../Ayesha/services/dbService';
 import { colors } from './colors';
 
-const STATUS_OPTIONS = ['All', 'Pending', 'In Progress', 'Solved'];
+const STATUS_OPTIONS = ['All', 'Pending', 'In Progress', 'Resolved'];
 
 export default function ComplaintsFeed() {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -179,6 +180,14 @@ export default function ComplaintsFeed() {
                   </View>
                 </View>
                 <Text style={styles.complaintDescription}>{complaint.description}</Text>
+                
+                {/* Display image if available */}
+                {complaint.imageUrl && (
+                  <View style={styles.imageContainer}>
+                    <Image source={{ uri: complaint.imageUrl }} style={styles.complaintImage} />
+                  </View>
+                )}
+                
                 <View style={styles.cardFooter}>
                   <View>
                     <Text style={styles.createdBy}>
@@ -333,5 +342,15 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 16,
     color: colors.danger,
+  },
+  imageContainer: {
+    marginVertical: 12,
+    alignItems: 'center',
+  },
+  complaintImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 8,
+    resizeMode: 'cover',
   },
 });
