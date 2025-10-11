@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { get, ref } from "firebase/database";
 import React, { useEffect, useState } from 'react';
 import {
@@ -17,6 +18,7 @@ import { colors } from './colors';
 const STATUS_OPTIONS = ['All', 'Pending', 'In Progress', 'Resolved'];
 
 export default function ComplaintsFeed() {
+  const router = useRouter();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('All');
@@ -103,6 +105,7 @@ export default function ComplaintsFeed() {
     switch (status) {
       case 'Pending': return colors.danger;
       case 'In Progress': return colors.warning;
+      case 'Resolved': return colors.success;
       case 'Solved': return colors.success;
       default: return colors.primaryLight;
     }
@@ -112,6 +115,7 @@ export default function ComplaintsFeed() {
     switch (status) {
       case 'Pending': return '⏳';
       case 'In Progress': return '🔄';
+      case 'Resolved': return '✅';
       case 'Solved': return '✅';
       default: return '📋';
     }
@@ -123,6 +127,13 @@ export default function ComplaintsFeed() {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => router.back()}
+      >
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
+      
       <Text style={styles.title}>📰 All Complaints Feed</Text>
       <View style={styles.filterContainer}>
         {STATUS_OPTIONS.map((status) => (
@@ -219,27 +230,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.backgroundLight,
-    padding: 16,
+    padding: 12,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
     color: colors.textPrimary,
   },
   filterContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: 12,
-    gap: 8,
+    gap: 6,
+    flexWrap: 'wrap',
   },
   filterButton: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     backgroundColor: colors.primaryLight,
     marginHorizontal: 2,
+    marginVertical: 2,
+    minHeight: 32,
+    justifyContent: 'center',
   },
   activeFilterButton: {
     backgroundColor: colors.primary,
@@ -247,7 +264,7 @@ const styles = StyleSheet.create({
   filterButtonText: {
     color: colors.textPrimary,
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 12,
   },
   activeFilterButtonText: {
     color: colors.textLight,
@@ -273,8 +290,8 @@ const styles = StyleSheet.create({
   },
   complaintCard: {
     backgroundColor: colors.white,
-    padding: 16,
-    marginBottom: 12,
+    padding: 12,
+    marginBottom: 10,
     borderRadius: 12,
     elevation: 2,
     shadowColor: colors.cardShadow,
@@ -286,30 +303,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   complaintTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
     marginRight: 8,
     color: colors.textPrimary,
+    lineHeight: 20,
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 10,
+    minWidth: 60,
+    alignItems: 'center',
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 10,
     color: colors.textLight,
     fontWeight: 'bold',
   },
   complaintDescription: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
-    marginBottom: 12,
-    lineHeight: 20,
+    marginBottom: 8,
+    lineHeight: 18,
   },
   cardFooter: {
     flexDirection: 'row',
@@ -344,13 +364,37 @@ const styles = StyleSheet.create({
     color: colors.danger,
   },
   imageContainer: {
-    marginVertical: 12,
+    marginVertical: 8,
     alignItems: 'center',
   },
   complaintImage: {
-    width: 200,
-    height: 200,
+    width: 150,
+    height: 150,
     borderRadius: 8,
     resizeMode: 'cover',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 40,
+    marginBottom: 16,
+    padding: 10,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignSelf: 'flex-start',
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    minHeight: 40,
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 4,
   },
 });

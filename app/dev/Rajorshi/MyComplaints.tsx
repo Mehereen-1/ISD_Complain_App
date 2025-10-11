@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -21,6 +22,7 @@ import { pickAndUploadImage } from '../Ayesha/services/uploadImageToCloudinary';
 import { colors } from './colors';
 
 export default function MyComplaints() {
+  const router = useRouter();
   const [myComplaints, setMyComplaints] = useState<Complaint[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -187,7 +189,7 @@ export default function MyComplaints() {
     switch (status) {
       case 'Pending': return colors.danger;         // red
       case 'In Progress': return colors.warning;    // yellow/orange
-      case 'Solved': return colors.success;         // green
+      case 'Resolved': return colors.success;         // green
       default: return colors.background;
     }
   };
@@ -196,7 +198,7 @@ export default function MyComplaints() {
     switch (status) {
       case 'Pending': return colors.white;
       case 'In Progress': return colors.textPrimary;
-      case 'Solved': return colors.white;
+      case 'Resolved': return colors.white;
       default: return colors.textPrimary;
     }
   };
@@ -215,6 +217,13 @@ export default function MyComplaints() {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => router.back()}
+      >
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
+      
       <Text style={styles.title}>📋 My Complaints</Text>
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
@@ -231,7 +240,7 @@ export default function MyComplaints() {
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.successLight }]}>
           <Text style={[styles.statNumber, { color: colors.success }]}>{stats.solved}</Text>
-          <Text style={styles.statLabel}>Solved</Text>
+          <Text style={styles.statLabel}>Resolved</Text>
         </View>
       </View>
       <ScrollView
@@ -379,36 +388,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.backgroundLight,
-    padding: 16,
+    padding: 12,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
     color: colors.textPrimary,
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   statCard: {
     flex: 1,
     backgroundColor: colors.white,
-    padding: 12,
+    padding: 10,
     marginHorizontal: 2,
     borderRadius: 8,
     alignItems: 'center',
     elevation: 1,
+    minHeight: 60,
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: colors.textPrimary,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textSecondary,
     marginTop: 4,
   },
@@ -433,8 +445,8 @@ const styles = StyleSheet.create({
   },
   complaintCard: {
     backgroundColor: colors.white,
-    padding: 16,
-    marginBottom: 12,
+    padding: 12,
+    marginBottom: 10,
     borderRadius: 12,
     elevation: 2,
     shadowColor: colors.cardShadow,
@@ -446,13 +458,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   complaintTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
     color: colors.textPrimary,
+    lineHeight: 20,
   },
   editButton: {
     padding: 8,
@@ -626,5 +639,29 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 40,
+    marginBottom: 16,
+    padding: 10,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignSelf: 'flex-start',
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    minHeight: 40,
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 4,
   },
 });
