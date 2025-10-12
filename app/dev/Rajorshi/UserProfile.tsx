@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { get, ref } from 'firebase/database';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth, db } from '../../../lib/firebaseConfig.js'; // adjust path if needed
 import { logout } from '../Ayesha/services/authService';
 import { StudentProfile, createStudentProfile, editProfile } from '../Ayesha/services/dbService';
@@ -184,13 +185,14 @@ export default function UserProfile() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity 
-        style={styles.backButton} 
-        onPress={() => router.back()}
-      >
-        <Text style={styles.backButtonText}>Back</Text>
-      </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
       
       <Text style={styles.title}>👤 My Profile</Text>
       <Text style={styles.label}>Name</Text>
@@ -237,11 +239,16 @@ export default function UserProfile() {
       >
         <Text style={styles.logoutButtonText}>🚪 Logout</Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.backgroundLight,
+  },
   container: {
     padding: 16,
     paddingHorizontal: 20,

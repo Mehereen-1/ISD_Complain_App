@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth } from '../../../lib/firebaseConfig.js';
 import {
   Complaint,
@@ -216,13 +217,14 @@ export default function MyComplaints() {
   const stats = getStatusStats();
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity 
-        style={styles.backButton} 
-        onPress={() => router.back()}
-      >
-        <Text style={styles.backButtonText}>Back</Text>
-      </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
       
       <Text style={styles.title}>📋 My Complaints</Text>
       <View style={styles.statsContainer}>
@@ -380,11 +382,16 @@ export default function MyComplaints() {
           ))
         )}
       </ScrollView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.backgroundLight,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.backgroundLight,
@@ -577,7 +584,7 @@ const styles = StyleSheet.create({
   },
   complaintImage: {
     width: 200,
-    height: 200,
+    height: 120,
     borderRadius: 8,
     resizeMode: 'cover',
   },
@@ -600,8 +607,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   imagePreview: {
-    width: 150,
-    height: 150,
+    width: 200,
+    height: 120,
     borderRadius: 8,
     resizeMode: 'cover',
     marginBottom: 8,

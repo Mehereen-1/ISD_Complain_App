@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth, db } from '../../../lib/firebaseConfig.js'; // Adjust if needed
 import { Complaint, deleteComplaintByUser, listenAllComplaints, StudentProfile } from '../Ayesha/services/dbService';
 import { colors } from './colors';
@@ -126,13 +127,14 @@ export default function ComplaintsFeed() {
     : complaints.filter(c => c.status === selectedStatus);
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity 
-        style={styles.backButton} 
-        onPress={() => router.back()}
-      >
-        <Text style={styles.backButtonText}>Back</Text>
-      </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
       
       <Text style={styles.title}>📰 All Complaints Feed</Text>
       <View style={styles.filterContainer}>
@@ -222,11 +224,16 @@ export default function ComplaintsFeed() {
           })
         )}
       </ScrollView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.backgroundLight,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.backgroundLight,
@@ -368,8 +375,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   complaintImage: {
-    width: 150,
-    height: 150,
+    width: 200,
+    height: 120,
     borderRadius: 8,
     resizeMode: 'cover',
   },

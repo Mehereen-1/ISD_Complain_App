@@ -2,16 +2,17 @@ import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth } from '../../../lib/firebaseConfig';
 import { addComplaint } from '../Ayesha/services/dbService';
 import { pickAndUploadImage } from '../Ayesha/services/uploadImageToCloudinary';
@@ -93,13 +94,14 @@ export default function SubmitComplaint() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <TouchableOpacity 
-        style={styles.backButton} 
-        onPress={() => router.back()}
-      >
-        <Text style={styles.backButtonText}>Back</Text>
-      </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
       
       <Text style={styles.title}>📝 Submit New Complaint</Text>
       <View style={styles.form}>
@@ -201,11 +203,16 @@ export default function SubmitComplaint() {
           )}
         </TouchableOpacity>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.backgroundLight,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.backgroundLight,
@@ -285,8 +292,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   previewImage: {
-    width: 150,
-    height: 150,
+    width: 200,
+    height: 120,
     borderRadius: 8,
     marginBottom: 8,
   },
