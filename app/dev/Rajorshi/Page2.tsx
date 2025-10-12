@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
-  Alert,
   Animated,
   Dimensions,
   Easing,
@@ -12,7 +11,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { logout } from '../Ayesha/services/authService';
 import { colors } from './colors';
 
 const { width, height } = Dimensions.get('window');
@@ -80,29 +78,6 @@ export default function Page2() {
     router.push('/dev/Rajorshi/UserProfile');
   };
 
-  const handleLogout = async () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await logout();
-              Alert.alert("Success", "Logged out successfully");
-              router.replace('/dev/Ayesha/homepage');
-            } catch (err: any) {
-              Alert.alert("Error", err.message);
-            }
-          }
-        }
-      ]
-    );
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.primaryLight} />
@@ -126,12 +101,6 @@ export default function Page2() {
           >
             Student Complaint Management System
           </Animated.Text>
-          <TouchableOpacity 
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
-            <Text style={styles.logoutButtonText}>🚪 Logout</Text>
-          </TouchableOpacity>
           <Animated.View 
             style={[
               styles.headerDecor,
@@ -246,15 +215,15 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 32,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    elevation: 8,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    elevation: 6,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
     backgroundColor: colors.primaryLight,
   },
   headerContent: {
@@ -262,13 +231,13 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '800',
     color: colors.textPrimary,
     textAlign: 'center',
     marginBottom: 8,
     paddingHorizontal: 10,
-    lineHeight: 30,
+    lineHeight: 26,
   },
   headerDecor: {
     position: 'absolute',
@@ -307,83 +276,70 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   welcomeText: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '700',
     color: colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   descriptionText: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 40,
-    lineHeight: 22,
+    marginBottom: 24,
+    lineHeight: 18,
     fontWeight: '500',
   },
   navigationContainer: {
     flex: 1,
     justifyContent: 'center',
-    gap: 20,
+    gap: 16,
   },
   navButton: {
     backgroundColor: colors.background,
-    borderRadius: 20,
+    borderRadius: 16,
     padding: 0,
-    elevation: 4,
+    elevation: 3,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    borderLeftWidth: 4,
+    shadowRadius: 6,
+    borderLeftWidth: 3,
   },
   buttonContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
   },
   iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 12,
   },
   navIcon: {
-    fontSize: 28,
+    fontSize: 24,
   },
   buttonContent: {
     flex: 1,
   },
   navButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: colors.textPrimary,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   navButtonSubtext: {
-    fontSize: 14,
+    fontSize: 12,
     color: colors.textSecondary,
     fontWeight: '500',
-  },
-  logoutButton: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: colors.danger,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  logoutButtonText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: 'bold',
   },
 });

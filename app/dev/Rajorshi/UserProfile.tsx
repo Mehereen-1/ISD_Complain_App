@@ -2,7 +2,9 @@ import { useRouter } from 'expo-router';
 import { get, ref } from 'firebase/database';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth, db } from '../../../lib/firebaseConfig.js'; // adjust path if needed
+import { logout } from '../Ayesha/services/authService';
 import { StudentProfile, createStudentProfile, editProfile } from '../Ayesha/services/dbService';
 import { colors } from './colors';
 
@@ -116,6 +118,29 @@ export default function UserProfile() {
     setSaving(false);
   };
 
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await logout();
+              Alert.alert("Success", "Logged out successfully");
+              router.replace('/dev/Ayesha/auth/signIn');
+            } catch (err: any) {
+              Alert.alert("Error", err.message);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -160,7 +185,15 @@ export default function UserProfile() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+      
       <Text style={styles.title}>👤 My Profile</Text>
       <Text style={styles.label}>Name</Text>
       <TextInput
@@ -199,49 +232,70 @@ export default function UserProfile() {
       >
         <Text style={styles.saveButtonText}>{saving ? 'Saving...' : 'Save Changes'}</Text>
       </TouchableOpacity>
-    </ScrollView>
+      
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={handleLogout}
+      >
+        <Text style={styles.logoutButtonText}>🚪 Logout</Text>
+      </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.backgroundLight,
+  },
   container: {
-    padding: 24,
+    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 32,
     backgroundColor: colors.backgroundLight,
     flexGrow: 1,
+    minHeight: '100%',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.backgroundLight,
+    padding: 20,
   },
   title: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 24,
+    marginBottom: 16,
     color: colors.primary,
     textAlign: 'center',
   },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.textPrimary,
-    marginBottom: 6,
-    marginTop: 12,
+    marginBottom: 4,
+    marginTop: 8,
+    fontWeight: '500',
   },
   input: {
     borderWidth: 1,
     borderColor: colors.primaryLight,
     borderRadius: 8,
-    padding: 10,
+    padding: 12,
     backgroundColor: colors.white,
     color: colors.textPrimary,
+    fontSize: 16,
+    minHeight: 44,
   },
   saveButton: {
     backgroundColor: colors.primary,
-    padding: 16,
+    padding: 14,
     borderRadius: 8,
-    marginTop: 24,
+    marginTop: 16,
     alignItems: 'center',
+    minHeight: 48,
   },
   saveButtonText: {
     color: colors.textLight,
@@ -250,20 +304,21 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: colors.danger,
-    fontSize: 16,
+    fontSize: 14,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   loadingText: {
     color: colors.textSecondary,
-    fontSize: 16,
+    fontSize: 14,
     marginTop: 8,
   },
   loginButton: {
     backgroundColor: colors.primary,
     padding: 12,
     borderRadius: 8,
-    marginTop: 16,
+    marginTop: 12,
+    minHeight: 44,
   },
   loginButtonText: {
     color: colors.textLight,
@@ -278,6 +333,48 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     color: colors.textLight,
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 40,
+    marginBottom: 16,
+    padding: 10,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignSelf: 'flex-start',
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    minHeight: 40,
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  logoutButton: {
+    backgroundColor: colors.danger,
+    padding: 14,
+    borderRadius: 8,
+    marginTop: 16,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    minHeight: 48,
+  },
+  logoutButtonText: {
+    color: colors.white,
     fontWeight: 'bold',
     fontSize: 16,
   },

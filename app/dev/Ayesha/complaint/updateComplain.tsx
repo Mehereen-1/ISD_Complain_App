@@ -2,17 +2,17 @@ import { Colors } from "@/app/theme/colors";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    Button,
-    FlatList,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Button,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import {
-    Complaint,
-    listenAllComplaints,
-    updateComplaintStatus,
+  Complaint,
+  listenAllComplaints,
+  updateComplaintStatus,
 } from "../services/dbService";
 
 
@@ -26,7 +26,7 @@ export default function ComplaintListScreen() {
     return () => unsubscribe();
   }, []);
 
-  const handleStatusUpdate = async (id: string, status: "Pending" | "In Progress" | "Solved") => {
+  const handleStatusUpdate = async (id: string, status: "Pending" | "In Progress" | "Resolved") => {
     try {
       await updateComplaintStatus(id, status);
       Alert.alert("Success", `Complaint marked as ${status}`);
@@ -54,9 +54,9 @@ export default function ComplaintListScreen() {
 
             <View style={styles.buttonRow}>
               <Button
-                title="Solved"
+                title="Resolved"
                 color="green"
-                onPress={() => handleStatusUpdate(item.id!, "Solved")}
+                onPress={() => handleStatusUpdate(item.id!, "Resolved")}
               />
               <Button
                 title="Pending"

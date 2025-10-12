@@ -1,8 +1,10 @@
 import { Picker } from '@react-native-picker/picker';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,8 +12,10 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { auth } from '../../../lib/firebaseConfig';
 import { addComplaint } from '../Ayesha/services/dbService';
+import { pickAndUploadImage } from '../Ayesha/services/uploadImageToCloudinary';
 import { colors } from './colors';
 
 // Example categories and zones (replace with your actual lists)
@@ -30,13 +34,30 @@ const zones = [
 ];
 
 export default function SubmitComplaint() {
+  const router = useRouter();
   const [complaint, setComplaint] = useState({
     title: '',
     description: '',
     category: categories[0],
     zone: zones[0],
   });
+  const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleImagePick = async () => {
+    try {
+      const url = await pickAndUploadImage();
+      if (url) {
+        setImageUrl(url);
+        Alert.alert('Success', 'Image uploaded successfully!');
+      } else {
+        Alert.alert('Error', 'Failed to upload image.');
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      Alert.alert('Error', 'Failed to upload image.');
+    }
+  };
 
   const handleSubmit = async () => {
     const user = auth.currentUser;
@@ -56,11 +77,13 @@ export default function SubmitComplaint() {
         description: complaint.description,
         category: complaint.category,
         zone: complaint.zone,
+        imageUrl: imageUrl, // Add the image URL
         status: 'Pending',
         createdBy: user.uid,
         createdAt: Date.now(),
       });
       setComplaint({ title: '', description: '', category: categories[0], zone: zones[0] });
+      setImageUrl(''); // Reset image URL
       Alert.alert('Success', 'Complaint submitted successfully!');
     } catch (error) {
       console.error('Submit error:', error);
@@ -71,7 +94,15 @@ export default function SubmitComplaint() {
   };
 
   return (
+    <SafeAreaView style={styles.container} edges={["top","left","right","bottom"]}>
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => router.back()}
+      >
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
+      
       <Text style={styles.title}>📝 Submit New Complaint</Text>
       <View style={styles.form}>
         <Text style={styles.label}>Complaint Title</Text>
@@ -129,6 +160,31 @@ export default function SubmitComplaint() {
           placeholderTextColor={colors.textSecondary}
         />
 
+        <Text style={styles.label}>Attach Image (Optional)</Text>
+        <TouchableOpacity
+          style={styles.imagePickerButton}
+          onPress={handleImagePick}
+          disabled={loading}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.imagePickerText}>
+            {imageUrl ? '📷 Change Image' : '📷 Pick an Image'}
+          </Text>
+        </TouchableOpacity>
+
+        {imageUrl ? (
+          <View style={styles.imagePreview}>
+            <Image source={{ uri: imageUrl }} style={styles.previewImage} />
+            <TouchableOpacity
+              style={styles.removeImageButton}
+              onPress={() => setImageUrl('')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.removeImageText}>✕ Remove</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <TouchableOpacity
           style={[styles.submitButton, loading && styles.disabledButton]}
           onPress={handleSubmit}
@@ -148,25 +204,32 @@ export default function SubmitComplaint() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.backgroundLight,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.backgroundLight,
     padding: 16,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
     color: colors.textPrimary,
   },
   form: {
     backgroundColor: colors.white,
-    padding: 20,
+    padding: 16,
     borderRadius: 12,
     elevation: 3,
     shadowColor: colors.cardShadow,
@@ -175,9 +238,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 6,
     color: colors.textPrimary,
   },
   input: {
@@ -185,35 +248,75 @@ const styles = StyleSheet.create({
     borderColor: colors.primaryLight,
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: 12,
     fontSize: 16,
     backgroundColor: colors.backgroundLight,
     color: colors.textPrimary,
+    minHeight: 44,
   },
   textArea: {
-    height: 120,
+    height: 100,
+    textAlignVertical: 'top',
   },
   pickerWrapper: {
     borderWidth: 1,
     borderColor: colors.primaryLight,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: 12,
     backgroundColor: colors.backgroundLight,
     overflow: 'hidden',
+    minHeight: 44,
   },
   picker: {
     color: colors.textPrimary,
-    height: 48,
+    height: 44,
     width: '100%',
+  },
+  imagePickerButton: {
+    backgroundColor: colors.secondary,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
+    minHeight: 44,
+  },
+  imagePickerText: {
+    color: colors.textLight,
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  imagePreview: {
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  previewImage: {
+    width: 200,
+    height: 120,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  removeImageButton: {
+    backgroundColor: colors.danger,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  removeImageText: {
+    color: colors.textLight,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   submitButton: {
     backgroundColor: colors.primary,
-    padding: 16,
+    padding: 14,
     borderRadius: 8,
     marginTop: 8,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    minHeight: 48,
   },
   disabledButton: {
     backgroundColor: colors.textSecondary,
@@ -227,5 +330,29 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 40,
+    marginBottom: 16,
+    padding: 10,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignSelf: 'flex-start',
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    minHeight: 40,
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 4,
   },
 });

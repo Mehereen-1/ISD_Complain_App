@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Complaint,
   listenAllComplaints
@@ -13,6 +14,7 @@ import { colors } from "../constants/colors";
 
 export default function ComplaintsTab() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const prevComplaintIdsRef = React.useRef<string[]>([]);
@@ -76,6 +78,7 @@ export default function ComplaintsTab() {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1, paddingBottom: Math.max(40, insets.bottom + 12) }} edges={["top", "left", "right", "bottom"]}>
     <>
       {/* Toast for new complaint notification */}
       {newComplaintNotif && (
@@ -127,6 +130,7 @@ export default function ComplaintsTab() {
         )}
       </View>
     </>
+    </SafeAreaView>
   );
 }
 

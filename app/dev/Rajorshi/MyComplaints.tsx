@@ -1,6 +1,8 @@
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
+  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -9,6 +11,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth } from '../../../lib/firebaseConfig.js';
 import {
   Complaint,
@@ -16,14 +19,18 @@ import {
   listenUserComplaints,
   updateComplaint
 } from '../Ayesha/services/dbService';
+import { pickAndUploadImage } from '../Ayesha/services/uploadImageToCloudinary';
 import { colors } from './colors';
 
 export default function MyComplaints() {
+  const router = useRouter();
   const [myComplaints, setMyComplaints] = useState<Complaint[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [currentUserUid, setCurrentUserUid] = useState<string | null>(null);
 
   // Listen for auth state changes
@@ -49,13 +56,29 @@ export default function MyComplaints() {
   const onRefresh = () => setRefreshing(true);
 
   const handleDelete = async (complaint: Complaint) => {
+    console.log('🏁 handleDelete called with:', {
+      currentUserUid,
+      complaintId: complaint.id,
+      complaintTitle: complaint.title,
+      complaintCreatedBy: complaint.createdBy
+    });
+
     if (!currentUserUid) {
+      console.log('❌ No current user - user must be logged in');
       Alert.alert('Error', 'You must be logged in to delete complaints.');
       return;
     }
     
     if (!complaint.id) {
+      console.log('❌ No complaint ID found');
       Alert.alert('Error', 'Invalid complaint ID.');
+      return;
+    }
+
+    // Additional authorization check at the UI level
+    if (complaint.createdBy !== currentUserUid) {
+      console.log('❌ Unauthorized - user does not own this complaint');
+      Alert.alert('Error', 'You can only delete your own complaints.');
       return;
     }
     
@@ -81,7 +104,7 @@ export default function MyComplaints() {
               await deleteComplaintByUser(currentUserUid, complaint.id!, complaint);
               
               console.log('✅ MyComplaints: Delete completed successfully');
-              Alert.alert('Success', 'Complaint deleted successfully.');
+              // Don't show success alert - user will see the complaint disappear from the list
             } catch (error) {
               console.error('❌ MyComplaints: Delete error:', error);
               Alert.alert('Error', `Failed to delete: ${(error as Error).message}`);
@@ -97,12 +120,46 @@ export default function MyComplaints() {
     setEditingId(complaint.id!);
     setEditTitle(complaint.title);
     setEditDescription(complaint.description);
+    setEditImageUrl(complaint.imageUrl || null);
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditTitle('');
     setEditDescription('');
+    setEditImageUrl(null);
+    setIsUploadingImage(false);
+  };
+
+  const handleImagePick = async () => {
+    try {
+      setIsUploadingImage(true);
+      const imageUrl = await pickAndUploadImage();
+      if (imageUrl) {
+        setEditImageUrl(imageUrl);
+        Alert.alert('Success', 'Image uploaded successfully!');
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      Alert.alert('Error', 'Failed to upload image. Please try again.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const removeImage = () => {
+    Alert.alert(
+      'Remove Image',
+      'Are you sure you want to remove this image?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Remove', 
+          style: 'destructive',
+          onPress: () => setEditImageUrl(null)
+        }
+      ]
+    );
   };
 
   const saveEdit = async (id: string) => {
@@ -114,12 +171,16 @@ export default function MyComplaints() {
       await updateComplaint(id, {
         title: editTitle,
         description: editDescription,
+        imageUrl: editImageUrl || undefined, // Use undefined instead of null for Firebase
       });
       setEditingId(null);
       setEditTitle('');
       setEditDescription('');
+      setEditImageUrl(null);
+      setIsUploadingImage(false);
       Alert.alert('Success', 'Complaint updated successfully');
     } catch (error) {
+      console.error('Update error:', error);
       Alert.alert('Error', 'Failed to update complaint');
     }
   };
@@ -129,7 +190,7 @@ export default function MyComplaints() {
     switch (status) {
       case 'Pending': return colors.danger;         // red
       case 'In Progress': return colors.warning;    // yellow/orange
-      case 'Solved': return colors.success;         // green
+      case 'Resolved': return colors.success;         // green
       default: return colors.background;
     }
   };
@@ -138,7 +199,7 @@ export default function MyComplaints() {
     switch (status) {
       case 'Pending': return colors.white;
       case 'In Progress': return colors.textPrimary;
-      case 'Solved': return colors.white;
+      case 'Resolved': return colors.white;
       default: return colors.textPrimary;
     }
   };
@@ -148,7 +209,7 @@ export default function MyComplaints() {
       total: myComplaints.length,
       pending: myComplaints.filter(c => c.status === 'Pending').length,
       inProgress: myComplaints.filter(c => c.status === 'In Progress').length,
-      solved: myComplaints.filter(c => c.status === 'Solved').length,
+      solved: myComplaints.filter(c => c.status === 'Resolved').length,
     };
     return stats;
   };
@@ -156,7 +217,15 @@ export default function MyComplaints() {
   const stats = getStatusStats();
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+      
       <Text style={styles.title}>📋 My Complaints</Text>
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
@@ -173,7 +242,7 @@ export default function MyComplaints() {
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.successLight }]}>
           <Text style={[styles.statNumber, { color: colors.success }]}>{stats.solved}</Text>
-          <Text style={styles.statLabel}>Solved</Text>
+          <Text style={styles.statLabel}>Resolved</Text>
         </View>
       </View>
       <ScrollView
@@ -230,17 +299,67 @@ export default function MyComplaints() {
                 )}
               </View>
               {editingId === complaint.id ? (
-                <TextInput
-                  style={[styles.editInput, { height: 80 }]}
-                  value={editDescription}
-                  onChangeText={setEditDescription}
-                  placeholder="Description"
-                  placeholderTextColor={colors.textSecondary}
-                  multiline
-                />
+                <>
+                  <TextInput
+                    style={[styles.editInput, { height: 80 }]}
+                    value={editDescription}
+                    onChangeText={setEditDescription}
+                    placeholder="Description"
+                    placeholderTextColor={colors.textSecondary}
+                    multiline
+                  />
+                  
+                  {/* Image editing section */}
+                  <View style={styles.imageEditSection}>
+                    <Text style={styles.imageEditLabel}>Image:</Text>
+                    
+                    {editImageUrl ? (
+                      <View style={styles.imagePreviewContainer}>
+                        <Image source={{ uri: editImageUrl }} style={styles.imagePreview} />
+                        <View style={styles.imageActions}>
+                          <TouchableOpacity 
+                            style={styles.imageActionButton}
+                            onPress={handleImagePick}
+                            disabled={isUploadingImage}
+                          >
+                            <Text style={styles.imageActionText}>
+                              {isUploadingImage ? '⏳' : '🔄'} Replace
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity 
+                            style={[styles.imageActionButton, styles.removeButton]}
+                            onPress={removeImage}
+                          >
+                            <Text style={styles.imageActionText}>🗑️ Remove</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ) : (
+                      <TouchableOpacity 
+                        style={styles.addImageButton}
+                        onPress={handleImagePick}
+                        disabled={isUploadingImage}
+                      >
+                        <Text style={styles.addImageText}>
+                          {isUploadingImage ? '⏳ Uploading...' : '📷 Add Image'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </>
               ) : (
-                <Text style={styles.complaintDescription}>{complaint.description}</Text>
+                <>
+                  <Text style={styles.complaintDescription}>{complaint.description}</Text>
+                  
+                  {/* Display image if available */}
+                  {complaint.imageUrl && (
+                    <View style={styles.imageContainer}>
+                      <Image source={{ uri: complaint.imageUrl }} style={styles.complaintImage} />
+                    </View>
+                  )}
+                </>
               )}
+              
               <Text style={styles.createdAt}>
                 📅 {new Date(complaint.createdAt).toLocaleDateString()}
               </Text>
@@ -263,44 +382,52 @@ export default function MyComplaints() {
           ))
         )}
       </ScrollView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.backgroundLight,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.backgroundLight,
-    padding: 16,
+    padding: 12,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
     color: colors.textPrimary,
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   statCard: {
     flex: 1,
     backgroundColor: colors.white,
-    padding: 12,
+    padding: 10,
     marginHorizontal: 2,
     borderRadius: 8,
     alignItems: 'center',
     elevation: 1,
+    minHeight: 60,
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: colors.textPrimary,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textSecondary,
     marginTop: 4,
   },
@@ -325,8 +452,8 @@ const styles = StyleSheet.create({
   },
   complaintCard: {
     backgroundColor: colors.white,
-    padding: 16,
-    marginBottom: 12,
+    padding: 12,
+    marginBottom: 10,
     borderRadius: 12,
     elevation: 2,
     shadowColor: colors.cardShadow,
@@ -338,13 +465,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   complaintTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
     color: colors.textPrimary,
+    lineHeight: 20,
   },
   editButton: {
     padding: 8,
@@ -449,5 +577,98 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 1,
     textTransform: 'uppercase',
+  },
+  imageContainer: {
+    marginVertical: 12,
+    alignItems: 'center',
+  },
+  complaintImage: {
+    width: 200,
+    height: 120,
+    borderRadius: 8,
+    resizeMode: 'cover',
+  },
+  // Image editing styles
+  imageEditSection: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
+  },
+  imageEditLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  imagePreviewContainer: {
+    alignItems: 'center',
+  },
+  imagePreview: {
+    width: 200,
+    height: 120,
+    borderRadius: 8,
+    resizeMode: 'cover',
+    marginBottom: 8,
+  },
+  imageActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  imageActionButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: colors.primary,
+    borderRadius: 6,
+    marginHorizontal: 4,
+  },
+  removeButton: {
+    backgroundColor: colors.danger,
+  },
+  imageActionText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  addImageButton: {
+    padding: 12,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderStyle: 'dashed',
+  },
+  addImageText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 40,
+    marginBottom: 16,
+    padding: 10,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignSelf: 'flex-start',
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    minHeight: 40,
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 4,
   },
 });

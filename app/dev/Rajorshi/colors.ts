@@ -1,3 +1,20 @@
+import { Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
+
+// Responsive helper functions
+export const getResponsiveSize = (size: number) => {
+  const baseWidth = 375; // iPhone 6/7/8 width as base
+  return (width / baseWidth) * size;
+};
+
+export const getResponsivePadding = (padding: number) => {
+  // Scale padding based on screen width
+  if (width < 350) return padding * 0.8; // Small screens
+  if (width > 450) return padding * 1.1; // Large screens
+  return padding;
+};
+
 export const colors = {
   // Primary Color Palette
   primary: '#3498DB', // Bright blue
