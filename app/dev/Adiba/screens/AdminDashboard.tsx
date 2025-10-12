@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../constants/colors";
 import ComplaintsTab from "./ComplaintsTab";
 import NotificationsTab from "./NotificationsTab";
@@ -13,6 +14,7 @@ import ProfileTab from "./ProfileTab";
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("complaints");
   // Remove local notifications state, will use NotificationsTab unread count
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
@@ -81,12 +83,12 @@ export default function AdminDashboard() {
 
 
   return (
-    <View style={styles.container}>
+  <SafeAreaView style={styles.container} edges={["top", "left", "right", "bottom"]}>
       {/* Navigation Bar with Title and Tabs */}
       <View style={styles.navbar}>
         {/* Admin Dashboard Title on Left */}
         <View style={styles.navTitleContainer}>
-          <Text style={styles.navTitle}>Admin Dashboard</Text>
+          <Text style={styles.navTitle} numberOfLines={1} ellipsizeMode="tail">Admin Dashboard</Text>
         </View>
         
         {/* Navigation Tabs on Right */}
@@ -99,6 +101,7 @@ export default function AdminDashboard() {
                 activeTab === item.name && styles.navItemActive
               ]}
               onPress={item.name === "notifications" ? handleNotificationPress : () => setActiveTab(item.name)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               activeOpacity={0.8}
             >
               <View style={styles.navIconContainer}>
@@ -123,19 +126,19 @@ export default function AdminDashboard() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
 
+      </View>
 
 
       {/* Scrollable Content */}
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{ ...styles.scrollContent, paddingBottom: Math.max(40, insets.bottom + 12) }}
       >
         {renderContent()}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -215,9 +218,10 @@ const styles = StyleSheet.create({
   },
   navTitleContainer: {
     flex: 1,
+    flexShrink: 1,
   },
   navTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: colors.textPrimary,
   },
@@ -227,8 +231,9 @@ const styles = StyleSheet.create({
   },
   navItem: {
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 12,
     marginHorizontal: 4,
     minWidth: 60,
@@ -255,7 +260,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 40,
   },
   contentContainer: {
     paddingHorizontal: 24,

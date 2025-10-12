@@ -1,42 +1,54 @@
-import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Dimensions, StyleSheet, View } from 'react-native';
 
-const SplashScreen = ({ navigation }) => {
+
+const SplashScreen = () => {
+  const navigation = useNavigation();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const title = "Complains";
+
   useEffect(() => {
+    Animated.timing(fadeAnim, { toValue: 1, duration: 2000, useNativeDriver: true }).start();
     const timer = setTimeout(() => {
-      navigation.replace('Signup'); // Navigate to Signup after 3 seconds
-    }, 3000); // 3000 ms = 3 seconds
-
-    return () => clearTimeout(timer); // cleanup
-  }, [navigation]);
+      navigation.replace('Signup'); // navigate to SignIn
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <View style={styles.container}>
-      {/* <Image
-        source={require('../assets/logo.png')} // your logo
-        style={styles.logo}
-      /> */}
-      <Text style={styles.text}>Welcome to MyApp</Text>
+    <View style={styles.container}> {/* ✅ Container View holds everything */}
+      <Animated.Image
+        source={require('../assets/images/logo.png')}
+        style={[styles.logo, { opacity: fadeAnim }]}
+        resizeMode="contain"
+      />
+      <Animated.Text style={[styles.title, { opacity: fadeAnim }]}>
+        {title}
+      </Animated.Text>
     </View>
   );
 };
 
-export default SplashScreen;
+const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: "#FFECC0",
     alignItems: 'center',
-    backgroundColor: '#fff',
+    justifyContent: 'center',
   },
   logo: {
-    width: 150,
-    height: 150,
+    width: width * 0.3,
+    height: width * 0.3,
     marginBottom: 20,
   },
-  text: {
-    fontSize: 24,
+  title: {
+    fontSize: 28,
     fontWeight: 'bold',
+    color: '#4a90e2',
   },
 });
+
+export default SplashScreen;
